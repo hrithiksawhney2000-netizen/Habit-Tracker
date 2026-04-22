@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Habit OS</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0b;
+  --surface: #131315;
+  --surface2: #1a1a1e;
+  --surface3: #222228;
+  --border: #25252c;
+  --border2: #2e2e38;
+  --accent: #c8f04d;
+  --accent-dim: rgba(200,240,77,0.12);
+  --accent2: #4df0c8;
+  --accent2-dim: rgba(77,240,200,0.1);
+  --accent3: #f04d7a;
+  --accent3-dim: rgba(240,77,122,0.1);
+  --gold: #f5c842;
+  --gold-dim: rgba(245,200,66,0.12);
+  --text: #eeeae4;
+  --text2: #a8a4a0;
+  --muted: #5a5a65;
+  --muted2: #2a2a32;
+  --radius: 14px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Syne',sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ── NOISE OVERLAY ── */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:0;opacity:0.6;
+}
+
+/* ── NAV ── */
+.nav{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 20px 0;
+  position:sticky;top:0;z-index:50;
+  background:linear-gradient(var(--bg) 80%,transparent);
+}
+.nav-brand{font-size:18px;font-weight:800;letter-spacing:-0.5px;}
+.nav-brand span{color:var(--accent);}
+.nav-tabs{
+  display:flex;gap:4px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:10px;padding:4px;
+}
+.nav-tab{
+  padding:6px 14px;border-radius:7px;font-size:12px;font-weight:700;
+  letter-spacing:0.5px;cursor:pointer;transition:all 0.2s;
+  color:var(--muted);border:none;background:none;font-family:'Syne',sans-serif;
+}
+.nav-tab.active{background:var(--surface3);color:var(--text);}
+.streak-chip{
+  display:flex;align-items:center;gap:5px;
+  background:var(--gold-dim);border:1px solid rgba(245,200,66,0.2);
+  border-radius:20px;padding:5px 12px;
+  font-family:'DM Mono',monospace;font-size:12px;font-weight:500;color:var(--gold);
+  cursor:pointer;transition:transform 0.2s;
+}
+.streak-chip:hover{transform:scale(1.05);}
+
+/* ── PAGES ── */
+.page{display:none;padding:20px 16px 100px;max-width:520px;margin:0 auto;position:relative;z-index:1;}
+.page.active{display:block;}
+
+/* ── SECTION LABEL ── */
+.sec-label{
+  font-family:'DM Mono',monospace;font-size:10px;font-weight:500;
+  letter-spacing:2px;text-transform:uppercase;color:var(--muted);
+  margin-bottom:10px;margin-top:24px;
+}
+.sec-label:first-child{margin-top:16px;}
+
+/* ── TODAY PROGRESS RING ── */
+.today-hero{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:20px;padding:20px;margin-bottom:14px;
+  display:flex;align-items:center;gap:20px;
+}
+.ring-wrap{position:relative;flex-shrink:0;}
+.ring-svg{transform:rotate(-90deg);}
+.ring-bg{fill:none;stroke:var(--muted2);stroke-width:8;}
+.ring-fill{fill:none;stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset 0.6s cubic-bezier(0.34,1.56,0.64,1);}
+.ring-center{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+}
+.ring-pct{font-family:'DM Mono',monospace;font-size:22px;font-weight:500;color:var(--accent);line-height:1;}
+.ring-done{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:2px;}
+.today-stats{flex:1;}
+.today-greeting{font-size:17px;font-weight:700;line-height:1.3;margin-bottom:6px;}
+.today-xp-bar-wrap{margin-top:10px;}
+.xp-bar-label{display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:5px;}
+.xp-bar-track{background:var(--muted2);border-radius:99px;height:6px;overflow:hidden;}
+.xp-bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent2),var(--accent));transition:width 0.5s cubic-bezier(0.34,1.56,0.64,1);}
+.level-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--accent-dim);border:1px solid rgba(200,240,77,0.2);
+  border-radius:20px;padding:4px 10px;font-size:11px;font-weight:700;color:var(--accent);
+  margin-bottom:8px;
+}
+
+/* ── HABIT LIST ── */
+.habits-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:20px;overflow:hidden;margin-bottom:14px;
+}
+.habits-card-header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:14px 18px;border-bottom:1px solid var(--border);
+}
+.habits-card-title{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+.icon-btn{
+  background:none;border:1px solid var(--border2);border-radius:8px;
+  color:var(--muted);font-size:13px;padding:5px 10px;cursor:pointer;
+  transition:all 0.2s;font-family:'DM Mono',monospace;
+}
+.icon-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+.habit-row{
+  display:flex;align-items:center;gap:12px;
+  padding:14px 18px;border-bottom:1px solid var(--border);
+  cursor:pointer;transition:background 0.15s;position:relative;overflow:hidden;
+}
+.habit-row:last-child{border-bottom:none;}
+.habit-row:hover{background:var(--surface2);}
+.habit-row.done{background:rgba(200,240,77,0.03);}
+.habit-row::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:transparent;transition:background 0.3s;border-radius:0 2px 2px 0;
+}
+.habit-row.done::before{background:var(--accent);}
+
+.hcheck{
+  width:24px;height:24px;border-radius:7px;border:2px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+.habit-row.done .hcheck{background:var(--accent);border-color:var(--accent);transform:scale(1.08);}
+.hcheck-icon{font-size:13px;font-weight:900;color:#0a0a0b;opacity:0;transform:scale(0);transition:all 0.2s;}
+.habit-row.done .hcheck-icon{opacity:1;transform:scale(1);}
+.hinfo{flex:1;}
+.hname{font-size:15px;font-weight:600;transition:color 0.2s;}
+.habit-row.done .hname{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--muted2);}
+.hsub{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:2px;}
+.hxp{font-family:'DM Mono',monospace;font-size:12px;color:var(--accent);font-weight:500;flex-shrink:0;}
+.habit-row.optional .hxp{color:var(--muted);}
+.opt-chip{
+  font-size:8px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;
+  color:var(--muted);background:var(--muted2);padding:2px 5px;border-radius:4px;
+}
+
+/* ── WEEK GRID ── */
+.week-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:20px;padding:18px;margin-bottom:14px;
+}
+.week-card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.week-card-title{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+.toggle-row{display:flex;align-items:center;gap:6px;cursor:pointer;}
+.toggle-track{
+  width:30px;height:17px;background:var(--muted2);border-radius:99px;
+  position:relative;transition:background 0.2s;
+}
+.toggle-track.on{background:var(--accent2);}
+.toggle-knob{
+  width:13px;height:13px;background:#fff;border-radius:50%;
+  position:absolute;top:2px;left:2px;transition:left 0.2s;
+}
+.toggle-track.on .toggle-knob{left:15px;}
+.toggle-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:0.5px;}
+
+.week-dots{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
+.wday{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.wday-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);}
+.wday-circle{
+  width:38px;height:38px;border-radius:10px;background:var(--muted2);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);
+  transition:all 0.3s;position:relative;
+}
+.wday-circle.today{border:1.5px solid var(--accent);color:var(--accent);}
+.wday-circle.partial{background:rgba(200,240,77,0.15);color:var(--accent);}
+.wday-circle.full{background:var(--accent);color:#0a0a0b;font-weight:700;}
+.wday-circle.off{opacity:0.25;}
+
+/* ═══════════════════════════════════════════
+   DASHBOARD PAGE
+══════════════════════════════════════════ */
+
+/* ── LEVEL / RANK CARD ── */
+.rank-card{
+  background:linear-gradient(135deg,var(--surface) 0%,var(--surface2) 100%);
+  border:1px solid var(--border);border-radius:20px;padding:20px;
+  margin-bottom:14px;position:relative;overflow:hidden;
+}
+.rank-card::after{
+  content:'';position:absolute;top:-40px;right:-40px;
+  width:160px;height:160px;border-radius:50%;
+  background:radial-gradient(circle,rgba(200,240,77,0.08) 0%,transparent 70%);
+  pointer-events:none;
+}
+.rank-top{display:flex;justify-content:space-between;align-items:flex-start;}
+.rank-left{}
+.rank-level-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+.rank-level-num{font-size:48px;font-weight:800;line-height:1;color:var(--accent);letter-spacing:-2px;}
+.rank-title{font-size:16px;font-weight:700;color:var(--text);margin-top:2px;}
+.rank-right{text-align:right;}
+.rank-xp-total{font-family:'DM Mono',monospace;font-size:22px;font-weight:500;color:var(--text);}
+.rank-xp-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);}
+.rank-bar-wrap{margin-top:16px;}
+.rank-bar-labels{display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:6px;}
+.rank-bar-track{height:8px;background:var(--muted2);border-radius:99px;overflow:hidden;}
+.rank-bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent2),var(--accent));transition:width 0.7s ease;}
+.rank-milestones{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;}
+.milestone{
+  display:flex;align-items:center;gap:4px;padding:4px 8px;
+  background:var(--surface3);border:1px solid var(--border2);border-radius:8px;
+  font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);
+  transition:all 0.3s;
+}
+.milestone.earned{border-color:rgba(245,200,66,0.3);color:var(--gold);background:var(--gold-dim);}
+
+/* ── STATS ROW ── */
+.stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;}
+.stat-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:14px;padding:14px 12px;text-align:center;
+}
+.stat-val{font-family:'DM Mono',monospace;font-size:24px;font-weight:500;line-height:1;}
+.stat-val.g{color:var(--accent);}
+.stat-val.b{color:var(--accent2);}
+.stat-val.r{color:var(--gold);}
+.stat-lbl{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-top:4px;letter-spacing:0.5px;text-transform:uppercase;}
+.stat-sub{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted2);margin-top:2px;}
+
+/* ── HABIT PERFORMANCE BARS ── */
+.perf-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:20px;padding:18px;margin-bottom:14px;
+}
+.perf-title{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+.perf-row{margin-bottom:12px;}
+.perf-row:last-child{margin-bottom:0;}
+.perf-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.perf-name{font-size:13px;font-weight:600;}
+.perf-meta{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);}
+.perf-track{height:6px;background:var(--muted2);border-radius:99px;overflow:hidden;}
+.perf-fill{height:100%;border-radius:99px;transition:width 0.6s ease;background:var(--accent);}
+
+/* ── HEAT MAP ── */
+.heat-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:20px;padding:18px;margin-bottom:14px;overflow-x:auto;
+}
+.heat-title{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+.heat-grid-wrap{overflow-x:auto;padding-bottom:4px;}
+.heat-grid{display:flex;gap:3px;}
+.heat-col{display:flex;flex-direction:column;gap:3px;}
+.heat-cell{
+  width:13px;height:13px;border-radius:3px;background:var(--muted2);
+  transition:all 0.2s;cursor:default;flex-shrink:0;
+}
+.heat-cell.l1{background:rgba(200,240,77,0.2);}
+.heat-cell.l2{background:rgba(200,240,77,0.45);}
+.heat-cell.l3{background:rgba(200,240,77,0.7);}
+.heat-cell.l4{background:var(--accent);}
+.heat-legend{display:flex;align-items:center;gap:5px;margin-top:10px;}
+.heat-legend-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);}
+.heat-legend-cells{display:flex;gap:3px;}
+
+/* ── MOMENTUM CHART ── */
+.momentum-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:20px;padding:18px;margin-bottom:14px;
+}
+.momentum-title{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+.chart-wrap{position:relative;height:100px;}
+.chart-canvas{width:100%;height:100%;}
+.chart-no-data{
+  display:flex;align-items:center;justify-content:center;
+  height:100%;font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);
+}
+
+/* ── BEST/WORST DAY ── */
+.insights-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.insight-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:14px;padding:14px;
+}
+.insight-icon{font-size:22px;margin-bottom:6px;}
+.insight-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.insight-val{font-size:15px;font-weight:700;margin-top:2px;}
+.insight-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:2px;}
+
+/* ── STREAK CALENDAR ── */
+.cal-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:20px;padding:18px;margin-bottom:14px;
+}
+.cal-title{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+.cal-month-label{font-family:'DM Mono',monospace;font-size:11px;color:var(--text2);margin-bottom:8px;font-weight:500;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:14px;}
+.cal-day-label{font-family:'DM Mono',monospace;font-size:8px;color:var(--muted);text-align:center;padding-bottom:2px;}
+.cal-day{
+  aspect-ratio:1;border-radius:6px;background:var(--muted2);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);
+}
+.cal-day.today-cal{border:1.5px solid var(--accent2);color:var(--accent2);}
+.cal-day.done-cal{background:var(--accent);color:#0a0a0b;font-weight:700;}
+.cal-day.partial-cal{background:rgba(200,240,77,0.2);color:var(--accent);}
+.cal-day.future-cal{opacity:0.2;}
+.cal-day.empty{background:transparent;}
+
+/* ── SCORES PAIR ── */
+.scores-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.score-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:14px;padding:16px;
+}
+.score-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;}
+.score-num{font-family:'DM Mono',monospace;font-size:30px;font-weight:500;line-height:1;}
+.score-num.wk{color:var(--accent2);}
+.score-num.mo{color:var(--accent);}
+.score-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:5px;}
+.score-pct-bar{height:4px;background:var(--muted2);border-radius:99px;overflow:hidden;margin-top:8px;}
+.score-pct-fill{height:100%;border-radius:99px;transition:width 0.5s ease;}
+.score-pct-fill.wk{background:var(--accent2);}
+.score-pct-fill.mo{background:var(--accent);}
+
+/* ═══════════════════════════════════════════
+   EDIT PAGE
+══════════════════════════════════════════ */
+.edit-list{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;}
+.edit-habit-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:14px;padding:16px;transition:border-color 0.2s;
+}
+.edit-habit-card:hover{border-color:var(--border2);}
+.edit-row{display:flex;gap:10px;align-items:center;margin-bottom:10px;}
+.edit-row:last-child{margin-bottom:0;}
+.edit-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);width:56px;flex-shrink:0;}
+.edit-input{
+  flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;
+  color:var(--text);font-family:'Syne',sans-serif;font-size:14px;padding:8px 12px;outline:none;
+  transition:border-color 0.2s;
+}
+.edit-input:focus{border-color:var(--accent);}
+.edit-input.mono{font-family:'DM Mono',monospace;font-size:13px;}
+.edit-input.xp-input{width:64px;flex:none;text-align:center;color:var(--accent);}
+.edit-card-actions{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);}
+.opt-toggle-row{display:flex;align-items:center;gap:8px;cursor:pointer;}
+.opt-toggle-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);}
+.delete-btn{
+  background:none;border:1px solid var(--border2);border-radius:8px;
+  color:var(--muted);font-size:12px;padding:5px 10px;cursor:pointer;
+  font-family:'DM Mono',monospace;transition:all 0.2s;
+}
+.delete-btn:hover{border-color:var(--accent3);color:var(--accent3);}
+
+.add-habit-btn{
+  width:100%;padding:14px;background:var(--accent-dim);
+  border:1.5px dashed rgba(200,240,77,0.3);border-radius:14px;
+  color:var(--accent);font-family:'Syne',sans-serif;font-size:14px;font-weight:700;
+  cursor:pointer;transition:all 0.2s;margin-bottom:14px;
+}
+.add-habit-btn:hover{background:rgba(200,240,77,0.18);}
+
+.save-all-btn{
+  width:100%;padding:15px;background:var(--accent);color:#0a0a0b;
+  border:none;border-radius:14px;font-family:'Syne',sans-serif;
+  font-size:15px;font-weight:800;cursor:pointer;transition:all 0.2s;
+  letter-spacing:0.3px;
+}
+.save-all-btn:hover{opacity:0.9;transform:scale(0.99);}
+
+/* ── CELEBRATION ── */
+.celeb-overlay{
+  position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+  z-index:999;pointer-events:none;
+}
+.celeb-box{
+  background:var(--surface);border:1px solid var(--accent);border-radius:24px;
+  padding:36px 48px;text-align:center;
+  box-shadow:0 0 80px rgba(200,240,77,0.2);
+  transform:scale(0);opacity:0;transition:all 0.45s cubic-bezier(0.34,1.56,0.64,1);
+}
+.celeb-box.show{transform:scale(1);opacity:1;}
+.celeb-emoji{font-size:52px;margin-bottom:14px;}
+.celeb-text{font-size:24px;font-weight:800;color:var(--accent);}
+.celeb-sub{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);margin-top:6px;}
+
+/* ── CONFETTI ── */
+.confetti-wrap{position:fixed;inset:0;pointer-events:none;z-index:998;overflow:hidden;}
+.cp{position:absolute;top:-10px;border-radius:2px;animation:cffall linear forwards;}
+@keyframes cffall{to{transform:translateY(110vh) rotate(720deg);opacity:0;}}
+
+/* ── STREAK TOAST ── */
+.streak-toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:var(--surface2);border:1px solid rgba(245,200,66,0.3);border-radius:14px;
+  padding:14px 24px;text-align:center;z-index:200;
+  transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1);pointer-events:none;
+  min-width:220px;
+}
+.streak-toast.show{transform:translateX(-50%) translateY(0);}
+.streak-toast-title{font-size:14px;font-weight:700;color:var(--gold);}
+.streak-toast-sub{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px;}
+
+/* ── TOAST SAVE ── */
+.save-toast{
+  position:fixed;bottom:24px;right:20px;
+  background:var(--surface);border:1px solid rgba(200,240,77,0.3);border-radius:10px;
+  padding:10px 16px;z-index:300;
+  font-family:'DM Mono',monospace;font-size:12px;color:var(--accent);
+  transform:translateY(60px);opacity:0;transition:all 0.3s;
+}
+.save-toast.show{transform:translateY(0);opacity:1;}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<div class="nav">
+  <div class="nav-brand">Habit<span>OS</span></div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="goPage('track')">Track</button>
+    <button class="nav-tab" onclick="goPage('dash')">Dashboard</button>
+    <button class="nav-tab" onclick="goPage('edit')">Edit</button>
+  </div>
+  <div class="streak-chip" onclick="showStreakToast()">
+    🔥 <span id="streakNum">0</span>d
+  </div>
+</div>
+
+<!-- ══ PAGE: TRACK ══ -->
+<div class="page active" id="page-track">
+
+  <div class="sec-label">Today</div>
+  <div class="today-hero">
+    <div class="ring-wrap">
+      <svg class="ring-svg" width="90" height="90" viewBox="0 0 90 90">
+        <circle class="ring-bg" cx="45" cy="45" r="37"/>
+        <circle class="ring-fill" id="ringFill" cx="45" cy="45" r="37"
+          stroke="url(#rg)" stroke-dasharray="232.5" stroke-dashoffset="232.5"/>
+        <defs>
+          <linearGradient id="rg" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#4df0c8"/>
+            <stop offset="100%" stop-color="#c8f04d"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <div class="ring-center">
+        <div class="ring-pct" id="ringPct">0%</div>
+        <div class="ring-done" id="ringDone">0/0</div>
+      </div>
+    </div>
+    <div class="today-stats">
+      <div class="level-badge" id="levelBadge">⚡ LVL 1</div>
+      <div class="today-greeting" id="todayGreeting">Start your day strong.</div>
+      <div class="today-xp-bar-wrap">
+        <div class="xp-bar-label">
+          <span id="xpEarned">0 XP</span>
+          <span id="xpPossible">/ 0 XP today</span>
+        </div>
+        <div class="xp-bar-track"><div class="xp-bar-fill" id="xpBarFill" style="width:0%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-label">Core Habits</div>
+  <div class="habits-card">
+    <div class="habits-card-header">
+      <div class="habits-card-title">Daily Checklist</div>
+      <div id="dateDisplay" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);"></div>
+    </div>
+    <div id="habitListCore"></div>
+  </div>
+
+  <div id="optionalSection">
+    <div class="sec-label">Optional</div>
+    <div class="habits-card">
+      <div id="habitListOpt"></div>
+    </div>
+  </div>
+
+  <div class="sec-label">This Week</div>
+  <div class="week-card">
+    <div class="week-card-top">
+      <div class="week-card-title">Week at a glance</div>
+      <div class="toggle-row" onclick="toggleWeekend()">
+        <div class="toggle-track" id="weekendTrack"><div class="toggle-knob"></div></div>
+        <div class="toggle-label">WEEKENDS</div>
+      </div>
+    </div>
+    <div class="week-dots" id="weekDots"></div>
+  </div>
+
+</div>
+
+<!-- ══ PAGE: DASHBOARD ══ -->
+<div class="page" id="page-dash">
+
+  <div class="sec-label">Your Rank</div>
+  <div class="rank-card">
+    <div class="rank-top">
+      <div class="rank-left">
+        <div class="rank-level-label">LEVEL</div>
+        <div class="rank-level-num" id="rankLvl">1</div>
+        <div class="rank-title" id="rankTitle">Initiate</div>
+      </div>
+      <div class="rank-right">
+        <div class="rank-xp-total" id="rankXpTotal">0 XP</div>
+        <div class="rank-xp-label">ALL TIME</div>
+      </div>
+    </div>
+    <div class="rank-bar-wrap">
+      <div class="rank-bar-labels">
+        <span id="rankBarCur">0 XP</span>
+        <span id="rankBarNext">next level</span>
+      </div>
+      <div class="rank-bar-track"><div class="rank-bar-fill" id="rankBarFill" style="width:0%"></div></div>
+    </div>
+    <div class="rank-milestones" id="rankMilestones"></div>
+  </div>
+
+  <div class="sec-label">Quick Stats</div>
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-val g" id="dStatStreak">0</div>
+      <div class="stat-lbl">STREAK</div>
+      <div class="stat-sub" id="dStatStreakSub">days</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val b" id="dStatWeek">0%</div>
+      <div class="stat-lbl">WEEK RATE</div>
+      <div class="stat-sub" id="dStatWeekSub">this wk</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val r" id="dStatBest">—</div>
+      <div class="stat-lbl">BEST DAY</div>
+      <div class="stat-sub" id="dStatBestSub">this month</div>
+    </div>
+  </div>
+
+  <div class="sec-label">Weekly & Monthly XP</div>
+  <div class="scores-pair">
+    <div class="score-card">
+      <div class="score-label">Weekly XP</div>
+      <div class="score-num wk" id="dWeekXp">0</div>
+      <div class="score-sub" id="dWeekMax">/ 0 possible</div>
+      <div class="score-pct-bar"><div class="score-pct-fill wk" id="dWeekBar" style="width:0%"></div></div>
+    </div>
+    <div class="score-card">
+      <div class="score-label">Monthly XP</div>
+      <div class="score-num mo" id="dMonthXp">0</div>
+      <div class="score-sub" id="dMonthMax">/ 0 possible</div>
+      <div class="score-pct-bar"><div class="score-pct-fill mo" id="dMonthBar" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <div class="sec-label">Habit Performance (30 days)</div>
+  <div class="perf-card">
+    <div class="perf-title">Completion Rate Per Habit</div>
+    <div id="perfList"></div>
+  </div>
+
+  <div class="sec-label">7-Day Momentum</div>
+  <div class="momentum-card">
+    <div class="momentum-title">Daily XP — Last 7 Days</div>
+    <div class="chart-wrap"><canvas id="momentumCanvas" class="chart-canvas"></canvas></div>
+  </div>
+
+  <div class="sec-label">Activity Heatmap</div>
+  <div class="heat-card">
+    <div class="heat-title">Past 10 Weeks</div>
+    <div class="heat-grid-wrap"><div class="heat-grid" id="heatGrid"></div></div>
+    <div class="heat-legend">
+      <div class="heat-legend-label">Less</div>
+      <div class="heat-legend-cells">
+        <div class="heat-cell"></div>
+        <div class="heat-cell l1"></div>
+        <div class="heat-cell l2"></div>
+        <div class="heat-cell l3"></div>
+        <div class="heat-cell l4"></div>
+      </div>
+      <div class="heat-legend-label">More</div>
+    </div>
+  </div>
+
+  <div class="sec-label">Insights</div>
+  <div class="insights-row">
+    <div class="insight-card">
+      <div class="insight-icon">⚡</div>
+      <div class="insight-label">Best Streak</div>
+      <div class="insight-val" id="dBestStreak">0 days</div>
+      <div class="insight-sub" id="dBestStreakSub">all time</div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-icon">🎯</div>
+      <div class="insight-label">Perfect Days</div>
+      <div class="insight-val" id="dPerfectDays">0</div>
+      <div class="insight-sub">this month</div>
+    </div>
+  </div>
+
+  <div class="sec-label">Monthly Calendar</div>
+  <div class="cal-card">
+    <div class="cal-title" id="calTitle">This Month</div>
+    <div class="cal-month-label" id="calMonthLabel"></div>
+    <div class="cal-grid" id="calGrid"></div>
+  </div>
+
+</div>
+
+<!-- ══ PAGE: EDIT ══ -->
+<div class="page" id="page-edit">
+  <div class="sec-label">Your Habits</div>
+  <div id="editList" class="edit-list"></div>
+  <button class="add-habit-btn" onclick="addHabit()">+ Add New Habit</button>
+  <button class="save-all-btn" onclick="saveAll()">Save All Changes</button>
+</div>
+
+<!-- CELEBRATION -->
+<div class="celeb-overlay" id="celebOverlay">
+  <div class="celeb-box" id="celebBox">
+    <div class="celeb-emoji" id="celebEmoji">🏆</div>
+    <div class="celeb-text" id="celebText">Day Complete!</div>
+    <div class="celeb-sub" id="celebSub">All habits done</div>
+  </div>
+</div>
+<div class="confetti-wrap" id="confettiWrap"></div>
+
+<!-- STREAK TOAST -->
+<div class="streak-toast" id="streakToast">
+  <div class="streak-toast-title">🔥 <span id="toastStreakNum">0</span>-Day Streak</div>
+  <div class="streak-toast-sub" id="toastStreakSub">Keep the chain alive</div>
+</div>
+
+<!-- SAVE TOAST -->
+<div class="save-toast" id="saveToast">✓ Saved</div>
+
+<script>
+// ══════════════════════════════════════════
+// DATA MODEL
+// ══════════════════════════════════════════
+const DEFAULT_HABITS = [
+  {id:'gym',    name:'Gym',           desc:'Train ≥ 30 min',     xp:25, optional:false},
+  {id:'cfa',    name:'CFA Study',     desc:'≥ 1 hour focused',   xp:30, optional:false},
+  {id:'reading',name:'Reading',       desc:'≥ 20 pages',         xp:15, optional:false},
+  {id:'journal',name:'Journaling',    desc:'Reflect on the day', xp:15, optional:false},
+  {id:'expense',name:'Track Expenses',desc:'Log all spending',   xp:10, optional:false},
+  {id:'skin',   name:'Skincare',      desc:'AM + PM routine',    xp:5,  optional:true},
+];
+
+const LEVELS = [
+  {lvl:1,title:'Initiate',   min:0},
+  {lvl:2,title:'Consistent', min:500},
+  {lvl:3,title:'Disciplined',min:1500},
+  {lvl:4,title:'Focused',    min:3000},
+  {lvl:5,title:'Elite',      min:5000},
+  {lvl:6,title:'Legendary',  min:8000},
+];
+
+const MILESTONES = [
+  {label:'3d 🔥',days:3},{label:'7d ⚡',days:7},
+  {label:'14d 💎',days:14},{label:'30d 🏆',days:30},
+];
+
+function dayKey(date){ return `ho_d_${date.toISOString().slice(0,10)}`; }
+function loadHabits(){ const r=localStorage.getItem('ho_habits'); return r?JSON.parse(r):JSON.parse(JSON.stringify(DEFAULT_HABITS)); }
+function saveHabits(h){ localStorage.setItem('ho_habits',JSON.stringify(h)); }
+function loadDay(date){ const r=localStorage.getItem(dayKey(date)); return r?JSON.parse(r):{checked:{}}; }
+function saveDay(date,d){ localStorage.setItem(dayKey(date),JSON.stringify(d)); }
+function loadMeta(){ const r=localStorage.getItem('ho_meta'); return r?JSON.parse(r):{weekendOn:false,streak:0,celebShown:''}; }
+function saveMeta(m){ localStorage.setItem('ho_meta',JSON.stringify(m)); }
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let habits = loadHabits();
+let meta   = loadMeta();
+let today  = new Date();
+let todayData = loadDay(today);
+
+// ══════════════════════════════════════════
+// CALCULATIONS
+// ══════════════════════════════════════════
+function todayXP(){
+  let e=0,p=0;
+  habits.forEach(h=>{p+=h.xp; if(todayData.checked[h.id])e+=h.xp;});
+  return {e,p};
+}
+function dayComplete(date){
+  const d=loadDay(date), h=loadHabits();
+  const core=h.filter(x=>!x.optional);
+  return core.length>0 && core.every(x=>d.checked[x.id]);
+}
+function calcStreak(){
+  let s=0, d=new Date(today);
+  d.setDate(d.getDate()-1);
+  while(true){
+    if(dayComplete(d)){s++;d.setDate(d.getDate()-1);}
+    else break;
+    if(s>365)break;
+  }
+  if(dayComplete(today))s++;
+  return s;
+}
+function weekXP(){
+  const mon=getMonday(today); let e=0,p=0;
+  for(let i=0;i<7;i++){
+    const d=new Date(mon); d.setDate(mon.getDate()+i);
+    const isWE=d.getDay()===0||d.getDay()===6;
+    if(isWE&&!meta.weekendOn)continue;
+    if(d>today)continue;
+    const dd=loadDay(d);
+    habits.forEach(h=>{p+=h.xp;if(dd.checked[h.id])e+=h.xp;});
+  }
+  return {e,p};
+}
+function monthXP(){
+  const yr=today.getFullYear(),mo=today.getMonth();
+  const days=new Date(yr,mo+1,0).getDate();
+  let e=0,p=0;
+  for(let d=1;d<=days;d++){
+    const dt=new Date(yr,mo,d);
+    const isWE=dt.getDay()===0||dt.getDay()===6;
+    if(dt>today)continue;
+    if(isWE&&!meta.weekendOn)continue;
+    const dd=loadDay(dt);
+    habits.forEach(h=>{p+=h.xp;if(dd.checked[h.id])e+=h.xp;});
+  }
+  return {e,p};
+}
+function allTimeXP(){
+  let total=0;
+  for(let key in localStorage){
+    if(!key.startsWith('ho_d_'))continue;
+    try{
+      const d=JSON.parse(localStorage[key]);
+      habits.forEach(h=>{if(d.checked&&d.checked[h.id])total+=h.xp;});
+    }catch(e){}
+  }
+  return total;
+}
+function getLevel(xp){
+  let cur=LEVELS[0];
+  for(let l of LEVELS){if(xp>=l.min)cur=l;}
+  return cur;
+}
+function getNextLevel(xp){
+  for(let i=0;i<LEVELS.length;i++){
+    if(xp<LEVELS[i].min)return LEVELS[i];
+  }
+  return null;
+}
+function getMonday(date){
+  const d=new Date(date), day=d.getDay();
+  const diff=day===0?-6:1-day;
+  d.setDate(d.getDate()+diff); return d;
+}
+function habitRate30(habitId){
+  let done=0,total=0;
+  for(let i=0;i<30;i++){
+    const d=new Date(today); d.setDate(today.getDate()-i);
+    const isWE=d.getDay()===0||d.getDay()===6;
+    if(isWE&&!meta.weekendOn)continue;
+    total++;
+    const dd=loadDay(d);
+    if(dd.checked&&dd.checked[habitId])done++;
+  }
+  return total>0?Math.round((done/total)*100):0;
+}
+function last7XP(){
+  const days=[];
+  for(let i=6;i>=0;i--){
+    const d=new Date(today); d.setDate(today.getDate()-i);
+    const dd=loadDay(d);
+    let xp=0;habits.forEach(h=>{if(dd.checked&&dd.checked[h.id])xp+=h.xp;});
+    days.push({date:d,xp});
+  }
+  return days;
+}
+function perfectDaysThisMonth(){
+  const yr=today.getFullYear(),mo=today.getMonth();
+  const days=new Date(yr,mo+1,0).getDate();
+  let count=0;
+  for(let d=1;d<=days;d++){
+    const dt=new Date(yr,mo,d);
+    if(dt>today)break;
+    if(dayComplete(dt))count++;
+  }
+  return count;
+}
+function bestStreak(){
+  let best=0,cur=0;
+  for(let i=89;i>=0;i--){
+    const d=new Date(today); d.setDate(today.getDate()-i);
+    if(dayComplete(d)){cur++;if(cur>best)best=cur;}
+    else cur=0;
+  }
+  return best;
+}
+
+// ══════════════════════════════════════════
+// GREETINGS
+// ══════════════════════════════════════════
+function greeting(pct){
+  const h=today.getHours();
+  const time=h<12?'Good morning':h<17?'Good afternoon':'Good evening';
+  if(pct===0)return `${time}. Start strong.`;
+  if(pct<0.5)return `Keep going — you're building momentum.`;
+  if(pct<1)return `Almost there. Finish what you started.`;
+  return `Full send. Day locked in. 🏆`;
+}
+
+// ══════════════════════════════════════════
+// RENDER — TRACK
+// ══════════════════════════════════════════
+function renderTrack(){
+  // date
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('dateDisplay').textContent=
+    `${days[today.getDay()]} ${today.getDate()} ${months[today.getMonth()]}`;
+
+  // ring
+  const {e,p}=todayXP();
+  const pct=p>0?e/p:0;
+  const circ=232.5;
+  document.getElementById('ringFill').style.strokeDashoffset=circ-(circ*pct);
+  document.getElementById('ringPct').textContent=Math.round(pct*100)+'%';
+  const core=habits.filter(x=>!x.optional);
+  const doneCt=core.filter(x=>todayData.checked[x.id]).length;
+  document.getElementById('ringDone').textContent=`${doneCt}/${core.length}`;
+
+  // xp bar
+  document.getElementById('xpEarned').textContent=e+' XP';
+  document.getElementById('xpPossible').textContent='/ '+p+' XP today';
+  document.getElementById('xpBarFill').style.width=Math.round(pct*100)+'%';
+
+  // level badge
+  const atXP=allTimeXP();
+  const lvl=getLevel(atXP);
+  document.getElementById('levelBadge').textContent=`⚡ LVL ${lvl.lvl} ${lvl.title}`;
+
+  // greeting
+  const h=today.getHours();
+  const timePart=h<12?'Good morning':h<17?'Good afternoon':'Good evening';
+  let greet;
+  if(pct===0)greet=`${timePart}. Start strong.`;
+  else if(pct<0.5)greet=`Keep going — you're building.`;
+  else if(pct<1)greet=`Almost there. Finish strong.`;
+  else greet=`Day locked in. 🏆`;
+  document.getElementById('todayGreeting').textContent=greet;
+
+  // streak
+  const s=calcStreak();
+  document.getElementById('streakNum').textContent=s;
+
+  // habit lists
+  renderHabitList();
+
+  // week dots
+  renderWeekDots();
+
+  // celebration
+  checkCelebration();
+}
+
+function renderHabitList(){
+  const core=habits.filter(x=>!x.optional);
+  const opt=habits.filter(x=>x.optional);
+  document.getElementById('habitListCore').innerHTML=core.map(h=>habitRowHTML(h)).join('');
+  document.getElementById('habitListOpt').innerHTML=opt.map(h=>habitRowHTML(h)).join('');
+  document.getElementById('optionalSection').style.display=opt.length?'block':'none';
+}
+
+function habitRowHTML(h){
+  const done=!!todayData.checked[h.id];
+  return `<div class="habit-row${done?' done':''}${h.optional?' optional':''}" onclick="toggleHabit('${h.id}')">
+    <div class="hcheck"><span class="hcheck-icon">✓</span></div>
+    <div class="hinfo">
+      <div class="hname">${h.name}</div>
+      <div class="hsub">${h.desc||''}${h.optional?' &nbsp;·&nbsp; <span class="opt-chip">OPTIONAL</span>':''}</div>
+    </div>
+    <div class="hxp">+${h.xp} XP</div>
+  </div>`;
+}
+
+function renderWeekDots(){
+  const mon=getMonday(today);
+  const labels=['M','T','W','T','F','S','S'];
+  let html='';
+  for(let i=0;i<7;i++){
+    const d=new Date(mon); d.setDate(mon.getDate()+i);
+    const isWE=d.getDay()===0||d.getDay()===6;
+    const isToday=d.toDateString()===today.toDateString();
+    const isFuture=d>today;
+    const dd=loadDay(d);
+    const core=habits.filter(x=>!x.optional);
+    const done=core.filter(x=>dd.checked&&dd.checked[x.id]).length;
+    const total=core.length;
+    let cls='';
+    if(isWE&&!meta.weekendOn)cls='off';
+    else if(!isFuture&&done===total&&total>0)cls='full';
+    else if(!isFuture&&done>0)cls='partial';
+    else if(isToday)cls='today';
+    const inner=isFuture?'':done===total&&total>0?'✓':done>0?done:'';
+    html+=`<div class="wday"><div class="wday-label">${labels[i]}</div><div class="wday-circle ${cls}">${inner}</div></div>`;
+  }
+  document.getElementById('weekDots').innerHTML=html;
+  document.getElementById('weekendTrack').className='toggle-track'+(meta.weekendOn?' on':'');
+}
+
+// ══════════════════════════════════════════
+// RENDER — DASHBOARD
+// ══════════════════════════════════════════
+function renderDash(){
+  const atXP=allTimeXP();
+  const lvl=getLevel(atXP);
+  const nextLvl=getNextLevel(atXP);
+  const s=calcStreak();
+  const {e:we,p:wp}=weekXP();
+  const {e:me,p:mp}=monthXP();
+
+  // rank card
+  document.getElementById('rankLvl').textContent=lvl.lvl;
+  document.getElementById('rankTitle').textContent=lvl.title;
+  document.getElementById('rankXpTotal').textContent=atXP+' XP';
+  if(nextLvl){
+    const prev=lvl.min, range=nextLvl.min-prev, prog=atXP-prev;
+    document.getElementById('rankBarCur').textContent=atXP+' XP';
+    document.getElementById('rankBarNext').textContent=`LVL ${nextLvl.lvl}: ${nextLvl.min} XP`;
+    document.getElementById('rankBarFill').style.width=Math.min(100,Math.round(prog/range*100))+'%';
+  } else {
+    document.getElementById('rankBarCur').textContent='MAX LEVEL';
+    document.getElementById('rankBarNext').textContent='Legendary';
+    document.getElementById('rankBarFill').style.width='100%';
+  }
+  // milestones
+  const mEl=document.getElementById('rankMilestones');
+  mEl.innerHTML=MILESTONES.map(m=>`<div class="milestone${s>=m.days?' earned':''}">${m.label}</div>`).join('');
+
+  // stats
+  document.getElementById('dStatStreak').textContent=s;
+  const wRate=wp>0?Math.round(we/wp*100):0;
+  document.getElementById('dStatWeek').textContent=wRate+'%';
+  document.getElementById('dStatWeekSub').textContent=`${we}/${wp} XP`;
+
+  // best day (most XP this month)
+  let bestXP=0,bestDate=null;
+  const yr=today.getFullYear(),mo=today.getMonth();
+  const daysInMo=new Date(yr,mo+1,0).getDate();
+  for(let d=1;d<=daysInMo;d++){
+    const dt=new Date(yr,mo,d);if(dt>today)break;
+    const dd=loadDay(dt);
+    let xp=0;habits.forEach(h=>{if(dd.checked&&dd.checked[h.id])xp+=h.xp;});
+    if(xp>bestXP){bestXP=xp;bestDate=dt;}
+  }
+  const dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  document.getElementById('dStatBest').textContent=bestXP?bestXP+' XP':'—';
+  document.getElementById('dStatBestSub').textContent=bestDate?dayNames[bestDate.getDay()]+' '+bestDate.getDate():'no data yet';
+
+  // week/month scores
+  document.getElementById('dWeekXp').textContent=we;
+  document.getElementById('dWeekMax').textContent=`/ ${wp} possible`;
+  document.getElementById('dWeekBar').style.width=(wp>0?Math.round(we/wp*100):0)+'%';
+  document.getElementById('dMonthXp').textContent=me;
+  document.getElementById('dMonthMax').textContent=`/ ${mp} possible`;
+  document.getElementById('dMonthBar').style.width=(mp>0?Math.round(me/mp*100):0)+'%';
+
+  // habit performance
+  const perf=document.getElementById('perfList');
+  perf.innerHTML=habits.map(h=>{
+    const rate=habitRate30(h.id);
+    const color=rate>=80?'var(--accent)':rate>=50?'var(--accent2)':'var(--accent3)';
+    return `<div class="perf-row">
+      <div class="perf-top">
+        <div class="perf-name">${h.name}</div>
+        <div class="perf-meta">${rate}% · 30d</div>
+      </div>
+      <div class="perf-track"><div class="perf-fill" style="width:${rate}%;background:${color}"></div></div>
+    </div>`;
+  }).join('');
+
+  // momentum chart
+  renderMomentumChart();
+
+  // heatmap
+  renderHeatMap();
+
+  // insights
+  document.getElementById('dBestStreak').textContent=bestStreak()+' days';
+  document.getElementById('dPerfectDays').textContent=perfectDaysThisMonth();
+
+  // calendar
+  renderCalendar();
+}
+
+function renderMomentumChart(){
+  const canvas=document.getElementById('momentumCanvas');
+  const ctx=canvas.getContext('2d');
+  const data=last7XP();
+  const maxP=habits.reduce((a,h)=>a+h.xp,0)||100;
+  const W=canvas.offsetWidth||320, H=100;
+  canvas.width=W; canvas.height=H;
+  ctx.clearRect(0,0,W,H);
+
+  const pad=16, chartW=W-pad*2, chartH=H-20;
+  const barW=Math.floor(chartW/7*0.5);
+  const gap=Math.floor(chartW/7);
+
+  // grid line
+  ctx.strokeStyle='rgba(255,255,255,0.04)';ctx.lineWidth=1;
+  for(let i=0;i<=2;i++){
+    const y=pad+(chartH/2)*i/1;
+    ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(W-pad,y);ctx.stroke();
+  }
+
+  const days=['M','T','W','T','F','S','S'];
+  const mon=getMonday(today);
+
+  data.forEach((d,i)=>{
+    const pct=Math.min(1,d.xp/maxP);
+    const x=pad+i*gap+gap/2-barW/2;
+    const barH=Math.max(4,Math.floor(pct*chartH));
+    const y=pad+chartH-barH;
+
+    const grad=ctx.createLinearGradient(0,y,0,y+barH);
+    grad.addColorStop(0,'#c8f04d');
+    grad.addColorStop(1,'rgba(200,240,77,0.2)');
+    ctx.fillStyle=grad;
+    ctx.beginPath();
+    ctx.roundRect(x,y,barW,barH,4);
+    ctx.fill();
+
+    // day label
+    const dt=new Date(mon);dt.setDate(mon.getDate()+i);
+    const isToday=dt.toDateString()===today.toDateString();
+    ctx.fillStyle=isToday?'#c8f04d':'rgba(255,255,255,0.25)';
+    ctx.font=`${isToday?'bold ':''} 9px 'DM Mono', monospace`;
+    ctx.textAlign='center';
+    ctx.fillText(days[i],x+barW/2,H-2);
+
+    // xp label
+    if(d.xp>0){
+      ctx.fillStyle='rgba(255,255,255,0.5)';
+      ctx.font='8px "DM Mono",monospace';
+      ctx.fillText(d.xp,x+barW/2,y-3);
+    }
+  });
+}
+
+function renderHeatMap(){
+  const grid=document.getElementById('heatGrid');
+  grid.innerHTML='';
+  // 10 weeks = 70 days back
+  const totalDays=70;
+  const start=new Date(today);
+  start.setDate(today.getDate()-(totalDays-1));
+  // align to Monday
+  while(start.getDay()!==1)start.setDate(start.getDate()-1);
+
+  const maxXP=habits.reduce((a,h)=>a+h.xp,0)||100;
+  let d=new Date(start);
+  while(d<=today){
+    const col=document.createElement('div');
+    col.className='heat-col';
+    for(let r=0;r<7;r++){
+      const cell=document.createElement('div');
+      cell.className='heat-cell';
+      if(d<=today){
+        const dd=loadDay(d);
+        let xp=0;habits.forEach(h=>{if(dd.checked&&dd.checked[h.id])xp+=h.xp;});
+        const pct=xp/maxXP;
+        if(pct>=0.9)cell.classList.add('l4');
+        else if(pct>=0.6)cell.classList.add('l3');
+        else if(pct>=0.3)cell.classList.add('l2');
+        else if(pct>0)cell.classList.add('l1');
+        const ds=d.toDateString();
+        cell.title=`${ds}: ${xp} XP`;
+      }else{cell.style.opacity='0';}
+      col.appendChild(cell);
+      d.setDate(d.getDate()+1);
+    }
+    grid.appendChild(col);
+  }
+}
+
+function renderCalendar(){
+  const yr=today.getFullYear(),mo=today.getMonth();
+  const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('calMonthLabel').textContent=`${months[mo]} ${yr}`;
+  const grid=document.getElementById('calGrid');
+  grid.innerHTML='';
+  const labels=['M','T','W','T','F','S','S'];
+  labels.forEach(l=>{
+    const el=document.createElement('div');
+    el.className='cal-day-label';el.textContent=l;grid.appendChild(el);
+  });
+  const firstDay=new Date(yr,mo,1).getDay();
+  const offset=firstDay===0?6:firstDay-1;
+  for(let i=0;i<offset;i++){const e=document.createElement('div');e.className='cal-day empty';grid.appendChild(e);}
+  const daysInMo=new Date(yr,mo+1,0).getDate();
+  for(let d=1;d<=daysInMo;d++){
+    const dt=new Date(yr,mo,d);
+    const isFuture=dt>today;
+    const isToday=dt.toDateString()===today.toDateString();
+    const el=document.createElement('div');
+    let cls='cal-day';
+    if(isFuture)cls+=' future-cal';
+    else if(isToday)cls+=' today-cal';
+    else if(dayComplete(dt))cls+=' done-cal';
+    else{
+      const dd=loadDay(dt);
+      const core=habits.filter(x=>!x.optional);
+      const done=core.filter(x=>dd.checked&&dd.checked[x.id]).length;
+      if(done>0)cls+=' partial-cal';
+    }
+    el.className=cls;el.textContent=d;
+    grid.appendChild(el);
+  }
+}
+
+// ══════════════════════════════════════════
+// RENDER — EDIT
+// ══════════════════════════════════════════
+function renderEdit(){
+  const list=document.getElementById('editList');
+  list.innerHTML='';
+  habits.forEach((h,i)=>{
+    const card=document.createElement('div');
+    card.className='edit-habit-card';
+    card.innerHTML=`
+      <div class="edit-row">
+        <div class="edit-label">Name</div>
+        <input class="edit-input" type="text" value="${h.name}" data-idx="${i}" data-field="name" placeholder="Habit name"/>
+      </div>
+      <div class="edit-row">
+        <div class="edit-label">Notes</div>
+        <input class="edit-input" type="text" value="${h.desc||''}" data-idx="${i}" data-field="desc" placeholder="Short description"/>
+      </div>
+      <div class="edit-row">
+        <div class="edit-label">XP</div>
+        <input class="edit-input xp-input mono" type="number" min="1" max="100" value="${h.xp}" data-idx="${i}" data-field="xp"/>
+        <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-left:4px;">pts/day</span>
+      </div>
+      <div class="edit-card-actions">
+        <div class="opt-toggle-row" onclick="toggleOptional(${i})">
+          <div class="toggle-track${h.optional?' on':''}" id="optToggle${i}"><div class="toggle-knob"></div></div>
+          <div class="opt-toggle-label">OPTIONAL</div>
+        </div>
+        <button class="delete-btn" onclick="deleteHabit(${i})">✕ Remove</button>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+}
+
+function addHabit(){
+  const newId='habit_'+Date.now();
+  habits.push({id:newId,name:'New Habit',desc:'',xp:10,optional:false});
+  renderEdit();
+  // scroll to bottom
+  setTimeout(()=>document.getElementById('editList').lastChild?.scrollIntoView({behavior:'smooth'}),50);
+}
+
+function toggleOptional(idx){
+  habits[idx].optional=!habits[idx].optional;
+  const t=document.getElementById('optToggle'+idx);
+  t.className='toggle-track'+(habits[idx].optional?' on':'');
+}
+
+function deleteHabit(idx){
+  if(habits.length<=1)return;
+  habits.splice(idx,1);
+  renderEdit();
+}
+
+function saveAll(){
+  // read all inputs
+  document.querySelectorAll('#editList input').forEach(inp=>{
+    const idx=parseInt(inp.dataset.idx);
+    const field=inp.dataset.field;
+    if(field==='xp') habits[idx][field]=Math.max(1,parseInt(inp.value)||1);
+    else if(field==='name') habits[idx][field]=inp.value.trim()||habits[idx][field];
+    else habits[idx][field]=inp.value.trim();
+  });
+  saveHabits(habits);
+  renderEdit();
+  renderTrack();
+  // show toast
+  const t=document.getElementById('saveToast');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2000);
+}
+
+// ══════════════════════════════════════════
+// INTERACTIONS
+// ══════════════════════════════════════════
+function toggleHabit(id){
+  todayData.checked[id]=!todayData.checked[id];
+  saveDay(today,todayData);
+  renderTrack();
+}
+
+function toggleWeekend(){
+  meta.weekendOn=!meta.weekendOn;
+  saveMeta(meta);
+  renderWeekDots();
+}
+
+function goPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if(id==='dash')renderDash();
+  if(id==='edit')renderEdit();
+  if(id==='track')renderTrack();
+}
+
+function showStreakToast(){
+  const s=calcStreak();
+  document.getElementById('toastStreakNum').textContent=s;
+  const sub=s===0?'Complete all core habits today to start a streak':
+             s<7?`${7-s} more days to hit a 7-day milestone`:
+             `${s} days strong — keep the chain alive 🔥`;
+  document.getElementById('toastStreakSub').textContent=sub;
+  const el=document.getElementById('streakToast');
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+// ══════════════════════════════════════════
+// CELEBRATION
+// ══════════════════════════════════════════
+function checkCelebration(){
+  const core=habits.filter(x=>!x.optional);
+  const allDone=core.length>0&&core.every(x=>todayData.checked[x.id]);
+  const todayStr=today.toISOString().slice(0,10);
+  if(allDone&&meta.celebShown!==todayStr){
+    meta.celebShown=todayStr;
+    saveMeta(meta);
+    showCelebration('🏆','Day Complete!',`All ${core.length} core habits done — full XP earned`);
+  }
+}
+
+function showCelebration(emoji,text,sub){
+  document.getElementById('celebEmoji').textContent=emoji;
+  document.getElementById('celebText').textContent=text;
+  document.getElementById('celebSub').textContent=sub;
+  document.getElementById('celebBox').classList.add('show');
+  spawnConfetti();
+  setTimeout(()=>{
+    document.getElementById('celebBox').classList.remove('show');
+    clearConfetti();
+  },4000);
+}
+
+function spawnConfetti(){
+  const colors=['#c8f04d','#4df0c8','#f04d7a','#f5c842','#ffffff','#a855f7'];
+  const wrap=document.getElementById('confettiWrap');
+  wrap.innerHTML='';
+  for(let i=0;i<70;i++){
+    const p=document.createElement('div');
+    p.className='cp';
+    p.style.left=Math.random()*100+'vw';
+    p.style.width=p.style.height=(5+Math.random()*8)+'px';
+    p.style.background=colors[Math.floor(Math.random()*colors.length)];
+    p.style.animationDelay=Math.random()+'s';
+    p.style.animationDuration=(2+Math.random()*1.5)+'s';
+    wrap.appendChild(p);
+  }
+}
+function clearConfetti(){document.getElementById('confettiWrap').innerHTML='';}
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+renderTrack();
+</script>
+</body>
+</html>
