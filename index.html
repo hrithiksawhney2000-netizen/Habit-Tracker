@@ -45,39 +45,93 @@ body::before{
   pointer-events:none;z-index:0;opacity:0.6;
 }
 
-/* ── NAV ── */
+/* ── TOP HEADER ── */
 .nav{
   display:flex;align-items:center;justify-content:space-between;
-  padding:18px 20px 0;
+  padding:16px 20px 12px;
+  padding-top:max(16px,env(safe-area-inset-top));
   position:sticky;top:0;z-index:50;
-  background:linear-gradient(var(--bg) 80%,transparent);
+  background:linear-gradient(var(--bg) 85%,transparent);
 }
 .nav-brand{font-size:18px;font-weight:800;letter-spacing:-0.5px;}
 .nav-brand span{color:var(--accent);}
-.nav-tabs{
-  display:flex;gap:4px;
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:10px;padding:4px;
-}
-.nav-tab{
-  padding:6px 14px;border-radius:7px;font-size:12px;font-weight:700;
-  letter-spacing:0.5px;cursor:pointer;transition:all 0.2s;
-  color:var(--muted);border:none;background:none;font-family:'Syne',sans-serif;
-}
-.nav-tab.active{background:var(--surface3);color:var(--text);}
+.nav-tabs{display:none;}
+.nav-tab{display:none;}
 .streak-chip{
   display:flex;align-items:center;gap:5px;
   background:var(--gold-dim);border:1px solid rgba(245,200,66,0.2);
-  border-radius:20px;padding:5px 12px;
-  font-family:'DM Mono',monospace;font-size:12px;font-weight:500;color:var(--gold);
+  border-radius:20px;padding:6px 14px;
+  font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:var(--gold);
   cursor:pointer;transition:transform 0.2s;
+  -webkit-tap-highlight-color:transparent;
 }
-.streak-chip:hover{transform:scale(1.05);}
+.streak-chip:active{transform:scale(0.95);}
+
+/* ── BOTTOM NAV BAR ── */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:100;
+  background:var(--surface);
+  border-top:1px solid var(--border);
+  display:flex;align-items:stretch;
+  padding-bottom:env(safe-area-inset-bottom);
+  box-shadow:0 -8px 32px rgba(0,0,0,0.5);
+}
+.bnav-tab{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;padding:10px 0 13px;cursor:pointer;
+  border:none;background:none;font-family:'Syne',sans-serif;
+  -webkit-tap-highlight-color:transparent;transition:background 0.15s;
+  position:relative;
+}
+.bnav-tab::before{
+  content:'';position:absolute;top:0;left:25%;right:25%;height:2px;
+  background:var(--accent);border-radius:0 0 3px 3px;
+  transform:scaleX(0);transition:transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+.bnav-tab.active::before{transform:scaleX(1);}
+.bnav-icon{font-size:21px;line-height:1;transition:transform 0.2s;}
+.bnav-tab.active .bnav-icon{transform:scale(1.18);}
+.bnav-label{
+  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.8px;
+  text-transform:uppercase;color:var(--muted);transition:color 0.2s;
+}
+.bnav-tab.active .bnav-label{color:var(--accent);}
+.bnav-tab:active{background:var(--surface2);}
 
 /* ── PAGES ── */
-.page{display:none;padding:20px 16px 100px;max-width:520px;margin:0 auto;position:relative;z-index:1;}
+.page{
+  display:none;
+  padding:16px 14px 120px;
+  max-width:520px;margin:0 auto;
+  position:relative;z-index:1;
+}
 .page.active{display:block;}
+
+/* ── MOBILE RESPONSIVE FIXES ── */
+@media(max-width:380px){
+  .today-hero{padding:14px;gap:14px;}
+  .ring-svg{width:78px;height:78px;}
+  .ring-pct{font-size:18px;}
+  .today-greeting{font-size:14px;}
+  .stats-row{grid-template-columns:1fr 1fr;gap:8px;}
+  .stat-card:last-child{grid-column:1/-1;}
+  .week-dots{gap:3px;}
+  .wday-circle{width:32px;height:32px;font-size:9px;border-radius:8px;}
+  .rank-level-num{font-size:38px;}
+  .score-num{font-size:24px;}
+  .celeb-box{padding:24px 28px;}
+  .celeb-text{font-size:19px;}
+  .edit-row{flex-wrap:wrap;}
+  .edit-label{width:100%;margin-bottom:2px;}
+  .habit-row{padding:12px 14px;}
+  .hname{font-size:14px;}
+}
+@media(max-width:340px){
+  .stats-row{grid-template-columns:1fr 1fr;gap:6px;}
+  .wday-circle{width:28px;height:28px;}
+  .nav-brand{font-size:15px;}
+  .streak-chip{padding:5px 10px;font-size:11px;}
+}
 
 /* ── SECTION LABEL ── */
 .sec-label{
@@ -135,8 +189,10 @@ body::before{
 
 .habit-row{
   display:flex;align-items:center;gap:12px;
-  padding:14px 18px;border-bottom:1px solid var(--border);
+  padding:16px 18px;border-bottom:1px solid var(--border);
   cursor:pointer;transition:background 0.15s;position:relative;overflow:hidden;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+  min-height:60px;
 }
 .habit-row:last-child{border-bottom:none;}
 .habit-row:hover{background:var(--surface2);}
@@ -148,12 +204,12 @@ body::before{
 .habit-row.done::before{background:var(--accent);}
 
 .hcheck{
-  width:24px;height:24px;border-radius:7px;border:2px solid var(--border2);
+  width:28px;height:28px;border-radius:8px;border:2px solid var(--border2);
   display:flex;align-items:center;justify-content:center;flex-shrink:0;
   transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);
 }
 .habit-row.done .hcheck{background:var(--accent);border-color:var(--accent);transform:scale(1.08);}
-.hcheck-icon{font-size:13px;font-weight:900;color:#0a0a0b;opacity:0;transform:scale(0);transition:all 0.2s;}
+.hcheck-icon{font-size:14px;font-weight:900;color:#0a0a0b;opacity:0;transform:scale(0);transition:all 0.2s;}
 .habit-row.done .hcheck-icon{opacity:1;transform:scale(1);}
 .hinfo{flex:1;}
 .hname{font-size:15px;font-weight:600;transition:color 0.2s;}
@@ -412,6 +468,171 @@ body::before{
 .cp{position:absolute;top:-10px;border-radius:2px;animation:cffall linear forwards;}
 @keyframes cffall{to{transform:translateY(110vh) rotate(720deg);opacity:0;}}
 
+/* ── QUOTE CARD ── */
+.quote-card{
+  background:linear-gradient(135deg,var(--surface) 0%,var(--surface2) 100%);
+  border:1px solid var(--border);border-radius:20px;
+  padding:18px 20px;margin-bottom:14px;position:relative;overflow:hidden;
+}
+.quote-card::before{
+  content:'"';position:absolute;top:-10px;left:14px;
+  font-size:80px;font-weight:800;color:rgba(200,240,77,0.06);
+  font-family:'Syne',sans-serif;line-height:1;pointer-events:none;
+}
+.quote-text{
+  font-size:14px;font-weight:600;line-height:1.6;color:var(--text);
+  font-style:italic;margin-bottom:10px;position:relative;z-index:1;
+}
+.quote-footer{display:flex;justify-content:space-between;align-items:center;}
+.quote-author{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:0.5px;}
+.quote-btn{
+  background:var(--accent-dim);border:1px solid rgba(200,240,77,0.2);
+  border-radius:20px;padding:5px 12px;
+  font-family:'DM Mono',monospace;font-size:10px;color:var(--accent);
+  cursor:pointer;transition:all 0.2s;-webkit-tap-highlight-color:transparent;
+  letter-spacing:0.3px;
+}
+.quote-btn:active{transform:scale(0.95);background:rgba(200,240,77,0.2);}
+
+/* ── MINI TRACK GRAPH ── */
+.mini-graph-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:20px;padding:16px 18px;margin-bottom:14px;
+}
+.mini-graph-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.mini-graph-title{font-family:'DM Mono',monospace;font-size:10px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+.mini-graph-avg{font-family:'DM Mono',monospace;font-size:11px;color:var(--accent2);}
+.mini-graph-bars{display:flex;align-items:flex-end;gap:4px;height:52px;}
+.mini-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;height:100%;}
+.mini-bar{width:100%;border-radius:4px 4px 0 0;min-height:3px;transition:height 0.4s cubic-bezier(0.34,1.56,0.64,1);}
+.mini-bar-lbl{font-family:'DM Mono',monospace;font-size:8px;color:var(--muted);}
+
+/* ── CALENDAR ENHANCED ── */
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.cal-nav-btn{
+  background:none;border:1px solid var(--border2);border-radius:8px;
+  color:var(--muted);font-size:14px;padding:5px 12px;cursor:pointer;
+  font-family:'DM Mono',monospace;transition:all 0.2s;
+  -webkit-tap-highlight-color:transparent;
+}
+.cal-nav-btn:active{border-color:var(--accent);color:var(--accent);}
+.cal-nav-label{font-family:'DM Mono',monospace;font-size:12px;color:var(--text2);font-weight:500;}
+/* green shading for calendar — override previous */
+.cal-day.done-cal{background:#2d5a1b;color:#c8f04d;font-weight:700;border:1px solid rgba(200,240,77,0.25);}
+.cal-day.hi-cal{background:#253b1a;color:#8ecf5a;}
+.cal-day.lo-cal{background:#1e2e16;color:#72a84a;}
+.cal-day.today-cal{border:2px solid var(--accent2);color:var(--accent2);background:rgba(77,240,200,0.05);}
+.cal-day.none-cal{background:#2a2a32;color:#6b6b74;border:1px solid #32323c;}
+.cal-day.future-cal{opacity:0.35;background:#222228;}
+.cal-legend{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.cal-leg-item{display:flex;align-items:center;gap:4px;font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);}
+.cal-leg-dot{width:10px;height:10px;border-radius:3px;}
+
+/* ── MONTH COMPARE CHART ── */
+.compare-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:20px;padding:18px;margin-bottom:14px;
+}
+.compare-title{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+.compare-canvas-wrap{height:120px;position:relative;}
+
+/* ── AI INSIGHT CARD ── */
+.ai-card{
+  background:linear-gradient(135deg,#0f1a0a 0%,#0a1015 50%,#0f0a1a 100%);
+  border:1px solid rgba(200,240,77,0.2);
+  border-radius:20px;padding:18px;margin-bottom:14px;position:relative;overflow:hidden;
+}
+.ai-card::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at top right,rgba(200,240,77,0.06),transparent 60%);
+  pointer-events:none;
+}
+.ai-card-top{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.ai-icon{
+  width:32px;height:32px;border-radius:10px;
+  background:var(--accent-dim);border:1px solid rgba(200,240,77,0.2);
+  display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;
+}
+.ai-card-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--accent);letter-spacing:1.5px;text-transform:uppercase;}
+.ai-card-sub{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-top:2px;}
+.ai-body{font-size:13px;line-height:1.7;color:var(--text2);position:relative;z-index:1;}
+.ai-body strong{color:var(--accent);font-weight:700;}
+.ai-tip{
+  display:flex;align-items:flex-start;gap:8px;margin-top:10px;
+  padding:10px 12px;background:rgba(200,240,77,0.05);
+  border:1px solid rgba(200,240,77,0.1);border-radius:10px;
+}
+.ai-tip-icon{font-size:14px;flex-shrink:0;margin-top:1px;}
+.ai-tip-text{font-family:'DM Mono',monospace;font-size:11px;color:var(--text2);line-height:1.5;}
+.ai-refresh{
+  margin-top:12px;background:none;border:1px solid var(--border2);border-radius:8px;
+  color:var(--muted);font-family:'DM Mono',monospace;font-size:10px;
+  padding:6px 12px;cursor:pointer;transition:all 0.2s;
+  -webkit-tap-highlight-color:transparent;
+}
+.ai-refresh:active{border-color:var(--accent);color:var(--accent);}
+
+/* ── REBOOT CARD (track page) ── */
+.reboot-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:20px;padding:16px 18px;margin-bottom:14px;
+  display:flex;align-items:center;justify-content:space-between;
+  cursor:pointer;transition:background 0.15s;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+  position:relative;overflow:hidden;
+}
+.reboot-card::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:var(--accent3);border-radius:0 2px 2px 0;
+}
+.reboot-card.done{background:rgba(240,77,122,0.04);}
+.reboot-card:active{background:var(--surface2);}
+.reboot-left{display:flex;align-items:center;gap:12px;}
+.reboot-check{
+  width:28px;height:28px;border-radius:8px;border:2px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+.reboot-card.done .reboot-check{background:var(--accent3);border-color:var(--accent3);transform:scale(1.08);}
+.reboot-check-icon{font-size:14px;font-weight:900;color:#fff;opacity:0;transform:scale(0);transition:all 0.2s;}
+.reboot-card.done .reboot-check-icon{opacity:1;transform:scale(1);}
+.reboot-name{font-size:15px;font-weight:600;}
+.reboot-card.done .reboot-name{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--muted2);}
+.reboot-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:2px;}
+.reboot-right{text-align:right;flex-shrink:0;}
+.reboot-count{font-family:'DM Mono',monospace;font-size:28px;font-weight:500;color:var(--accent3);line-height:1;}
+.reboot-count-lbl{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;}
+
+/* ── REBOOT DASH CARD (dashboard) ── */
+.reboot-dash-card{
+  background:var(--surface);border:1px solid rgba(240,77,122,0.2);
+  border-radius:20px;padding:18px;margin-bottom:14px;
+  position:relative;overflow:hidden;
+}
+.reboot-dash-card::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at top right,rgba(240,77,122,0.05),transparent 60%);
+  pointer-events:none;
+}
+.reboot-dash-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.reboot-dash-left{display:flex;align-items:center;gap:10px;}
+.reboot-dash-icon{font-size:22px;}
+.reboot-dash-label{font-size:13px;font-weight:700;color:var(--text);}
+.reboot-dash-sub{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-top:2px;}
+.reboot-dash-streak{text-align:right;}
+.reboot-dash-num{font-family:'DM Mono',monospace;font-size:36px;font-weight:500;color:var(--accent3);line-height:1;}
+.reboot-dash-unit{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;}
+.reboot-dots-wrap{overflow-x:auto;padding-bottom:4px;}
+.reboot-dots{display:flex;gap:4px;min-width:max-content;}
+.reboot-dot{
+  width:14px;height:14px;border-radius:4px;flex-shrink:0;
+  transition:all 0.2s;
+}
+.reboot-dot.on{background:var(--accent3);}
+.reboot-dot.off{background:var(--muted2);}
+.reboot-dot.today-dot{outline:2px solid var(--accent3);outline-offset:1px;}
+.reboot-dash-footer{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:10px;}
+
 /* ── STREAK TOAST ── */
 .streak-toast{
   position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
@@ -437,23 +658,54 @@ body::before{
 </head>
 <body>
 
-<!-- NAV -->
+<!-- TOP HEADER -->
 <div class="nav">
   <div class="nav-brand">Habit<span>OS</span></div>
-  <div class="nav-tabs">
-    <button class="nav-tab active" onclick="goPage('track')">Track</button>
-    <button class="nav-tab" onclick="goPage('dash')">Dashboard</button>
-    <button class="nav-tab" onclick="goPage('edit')">Edit</button>
-  </div>
   <div class="streak-chip" onclick="showStreakToast()">
     🔥 <span id="streakNum">0</span>d
   </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <button class="bnav-tab active" id="bnav-track" onclick="goPage('track',this)">
+    <div class="bnav-icon">✅</div>
+    <div class="bnav-label">Track</div>
+  </button>
+  <button class="bnav-tab" id="bnav-dash" onclick="goPage('dash',this)">
+    <div class="bnav-icon">📊</div>
+    <div class="bnav-label">Dashboard</div>
+  </button>
+  <button class="bnav-tab" id="bnav-edit" onclick="goPage('edit',this)">
+    <div class="bnav-icon">⚙️</div>
+    <div class="bnav-label">Edit</div>
+  </button>
 </div>
 
 <!-- ══ PAGE: TRACK ══ -->
 <div class="page active" id="page-track">
 
   <div class="sec-label">Today</div>
+
+  <!-- QUOTE CARD -->
+  <div class="quote-card">
+    <div class="quote-text" id="quoteText">Loading quote...</div>
+    <div class="quote-footer">
+      <div class="quote-author" id="quoteAuthor"></div>
+      <button class="quote-btn" onclick="nextQuote()">↻ New quote</button>
+    </div>
+  </div>
+
+  <!-- MINI PROGRESS GRAPH (7-day) -->
+  <div class="mini-graph-card">
+    <div class="mini-graph-top">
+      <div class="mini-graph-title">7-day XP trend</div>
+      <div class="mini-graph-avg" id="miniGraphAvg"></div>
+    </div>
+    <div class="mini-graph-bars" id="miniGraphBars"></div>
+  </div>
+
+  <!-- HERO RING -->
   <div class="today-hero">
     <div class="ring-wrap">
       <svg class="ring-svg" width="90" height="90" viewBox="0 0 90 90">
@@ -511,6 +763,21 @@ body::before{
       </div>
     </div>
     <div class="week-dots" id="weekDots"></div>
+  </div>
+
+  <div class="sec-label">System Reboot</div>
+  <div class="reboot-card" id="rebootCard" onclick="toggleReboot()">
+    <div class="reboot-left">
+      <div class="reboot-check" id="rebootCheck"><span class="reboot-check-icon">✓</span></div>
+      <div class="reboot-info">
+        <div class="reboot-name">Reboot Streak</div>
+        <div class="reboot-sub">Maintained today — private counter</div>
+      </div>
+    </div>
+    <div class="reboot-right">
+      <div class="reboot-count" id="rebootCount">0</div>
+      <div class="reboot-count-lbl">days</div>
+    </div>
   </div>
 
 </div>
@@ -623,9 +890,58 @@ body::before{
 
   <div class="sec-label">Monthly Calendar</div>
   <div class="cal-card">
-    <div class="cal-title" id="calTitle">This Month</div>
-    <div class="cal-month-label" id="calMonthLabel"></div>
+    <div class="cal-nav">
+      <button class="cal-nav-btn" onclick="calShift(-1)">‹</button>
+      <div class="cal-nav-label" id="calNavLabel"></div>
+      <button class="cal-nav-btn" onclick="calShift(1)">›</button>
+    </div>
     <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-legend">
+      <div class="cal-leg-item"><div class="cal-leg-dot" style="background:#2d5a1b;border:1px solid rgba(200,240,77,0.25)"></div>100% done</div>
+      <div class="cal-leg-item"><div class="cal-leg-dot" style="background:#253b1a"></div>≥50%</div>
+      <div class="cal-leg-item"><div class="cal-leg-dot" style="background:#1e2e16"></div>&lt;50%</div>
+      <div class="cal-leg-item"><div class="cal-leg-dot" style="background:#2a2a32;border:1px solid #32323c"></div>No progress</div>
+    </div>
+  </div>
+
+  <div class="sec-label">Month vs Month</div>
+  <div class="compare-card">
+    <div class="compare-title">Completion % — Last 4 Months</div>
+    <div class="compare-canvas-wrap"><canvas id="compareCanvas" style="width:100%;height:100%"></canvas></div>
+  </div>
+
+  <div class="sec-label">System Reboot</div>
+  <div class="reboot-dash-card">
+    <div class="reboot-dash-top">
+      <div class="reboot-dash-left">
+        <div class="reboot-dash-icon">🔒</div>
+        <div>
+          <div class="reboot-dash-label">Reboot Streak</div>
+          <div class="reboot-dash-sub">Private — not in main score</div>
+        </div>
+      </div>
+      <div class="reboot-dash-streak">
+        <div class="reboot-dash-num" id="rebootDashNum">0</div>
+        <div class="reboot-dash-unit">days</div>
+      </div>
+    </div>
+    <div class="reboot-dots-wrap">
+      <div class="reboot-dots" id="rebootDots"></div>
+    </div>
+    <div class="reboot-dash-footer" id="rebootDashFooter"></div>
+  </div>
+
+  <div class="sec-label">AI Insights</div>
+  <div class="ai-card">
+    <div class="ai-card-top">
+      <div class="ai-icon">🧠</div>
+      <div>
+        <div class="ai-card-label">Smart Analysis</div>
+        <div class="ai-card-sub">Based on your habit data</div>
+      </div>
+    </div>
+    <div class="ai-body" id="aiBody">Analysing your patterns...</div>
+    <button class="ai-refresh" onclick="renderAiInsight()">↻ Refresh insight</button>
   </div>
 
 </div>
@@ -658,6 +974,45 @@ body::before{
 <div class="save-toast" id="saveToast">✓ Saved</div>
 
 <script>
+// ══════════════════════════════════════════
+// QUOTES
+// ══════════════════════════════════════════
+const QUOTES = [
+  {text:"Discipline is doing what needs to be done, even when you don't feel like it.",author:"— Anonymous"},
+  {text:"The CFA exam doesn't reward the smartest — it rewards the most consistent.",author:"— CFA Prep Wisdom"},
+  {text:"You don't rise to the level of your goals. You fall to the level of your systems.",author:"— James Clear"},
+  {text:"Every workout is a deposit in your future self's account.",author:"— Anonymous"},
+  {text:"Financial analysts are made in the hours others spend watching TV.",author:"— Unknown"},
+  {text:"A journal is the mirror your future self will use to understand your past.",author:"— Anonymous"},
+  {text:"Track your money or your money tracks you out the door.",author:"— Anonymous"},
+  {text:"The compound effect of daily habits is the most underrated force in finance and life.",author:"— Darren Hardy"},
+  {text:"Reading is to the mind what exercise is to the body.",author:"— Joseph Addison"},
+  {text:"Small disciplines repeated with consistency every day lead to great achievements.",author:"— John Maxwell"},
+  {text:"In investing and in habits, time in the market beats timing the market.",author:"— Anonymous"},
+  {text:"Your morning routine is the blueprint for the entire day.",author:"— Anonymous"},
+  {text:"The man who moves a mountain begins by carrying away small stones.",author:"— Confucius"},
+  {text:"CFA Level 2 is a marathon. Show up every day and the finish line comes to you.",author:"— CFA Community"},
+  {text:"An investment in knowledge pays the best interest.",author:"— Benjamin Franklin"},
+  {text:"Success is the sum of small efforts, repeated day in and day out.",author:"— Robert Collier"},
+  {text:"Self-discipline is the bridge between goals and accomplishment.",author:"— Jim Rohn"},
+  {text:"What gets measured gets managed — and what gets managed gets done.",author:"— Peter Drucker"},
+  {text:"The secret of getting ahead is getting started.",author:"— Mark Twain"},
+  {text:"Motivation gets you started. Habit keeps you going.",author:"— Jim Ryun"},
+];
+let quoteIdx = parseInt(localStorage.getItem('ho_qidx')||'0') % QUOTES.length;
+function nextQuote(){
+  quoteIdx=(quoteIdx+1)%QUOTES.length;
+  localStorage.setItem('ho_qidx',quoteIdx);
+  showQuote();
+}
+function showQuote(){
+  const q=QUOTES[quoteIdx];
+  document.getElementById('quoteText').textContent=q.text;
+  document.getElementById('quoteAuthor').textContent=q.author;
+}
+
+let calViewOffset=0; // months back from today
+
 // ══════════════════════════════════════════
 // DATA MODEL
 // ══════════════════════════════════════════
@@ -836,6 +1191,12 @@ function greeting(pct){
 // RENDER — TRACK
 // ══════════════════════════════════════════
 function renderTrack(){
+  // quote
+  showQuote();
+
+  // mini 7-day graph
+  renderMiniGraph();
+
   // date
   const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -884,6 +1245,7 @@ function renderTrack(){
 
   // celebration
   checkCelebration();
+  renderRebootCard();
 }
 
 function renderHabitList(){
@@ -1013,7 +1375,11 @@ function renderDash(){
   document.getElementById('dPerfectDays').textContent=perfectDaysThisMonth();
 
   // calendar
+  calViewOffset=0;
   renderCalendar();
+  setTimeout(renderCompareChart,50);
+  renderAiInsight();
+  renderRebootDash();
 }
 
 function renderMomentumChart(){
@@ -1106,14 +1472,56 @@ function renderHeatMap(){
   }
 }
 
+// ── MINI GRAPH (track page) ──────────────────
+function renderMiniGraph(){
+  const maxXP=habits.reduce((a,h)=>a+h.xp,0)||100;
+  const bars=document.getElementById('miniGraphBars');
+  bars.innerHTML='';
+  const days=['M','T','W','T','F','S','S'];
+  const mon=getMonday(today);
+  let totalXP=0,cnt=0;
+  for(let i=0;i<7;i++){
+    const d=new Date(mon);d.setDate(mon.getDate()+i);
+    const isFuture=d>today;
+    const isToday=d.toDateString()===today.toDateString();
+    const dd=loadDay(d);
+    let xp=0;if(!isFuture)habits.forEach(h=>{if(dd.checked&&dd.checked[h.id])xp+=h.xp;});
+    const pct=Math.min(1,xp/maxXP);
+    if(!isFuture){totalXP+=xp;cnt++;}
+    const color=isToday?'var(--accent)':pct>=0.9?'rgba(200,240,77,0.8)':pct>=0.5?'rgba(200,240,77,0.45)':pct>0?'rgba(200,240,77,0.2)':'var(--muted2)';
+    const wrap=document.createElement('div');
+    wrap.className='mini-bar-wrap';
+    wrap.style.justifyContent='flex-end';
+    const bar=document.createElement('div');
+    bar.className='mini-bar';
+    bar.style.height=Math.max(3,Math.round(pct*48))+'px';
+    bar.style.background=color;
+    if(isToday)bar.style.boxShadow='0 0 6px rgba(200,240,77,0.4)';
+    const lbl=document.createElement('div');
+    lbl.className='mini-bar-lbl';lbl.textContent=days[i];
+    wrap.appendChild(bar);wrap.appendChild(lbl);
+    bars.appendChild(wrap);
+  }
+  const avg=cnt>0?Math.round(totalXP/cnt):0;
+  document.getElementById('miniGraphAvg').textContent=`avg ${avg} XP/day`;
+}
+
+// ── CALENDAR ──────────────────────────────────
+function calShift(dir){
+  calViewOffset=Math.max(-11,Math.min(0,calViewOffset+dir));
+  renderCalendar();
+}
+
 function renderCalendar(){
-  const yr=today.getFullYear(),mo=today.getMonth();
+  const ref=new Date(today.getFullYear(),today.getMonth()+calViewOffset,1);
+  const yr=ref.getFullYear(),mo=ref.getMonth();
   const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
-  document.getElementById('calMonthLabel').textContent=`${months[mo]} ${yr}`;
+  document.getElementById('calNavLabel').textContent=`${months[mo]} ${yr}`;
+
   const grid=document.getElementById('calGrid');
   grid.innerHTML='';
-  const labels=['M','T','W','T','F','S','S'];
-  labels.forEach(l=>{
+  const dayLabels=['M','T','W','T','F','S','S'];
+  dayLabels.forEach(l=>{
     const el=document.createElement('div');
     el.className='cal-day-label';el.textContent=l;grid.appendChild(el);
   });
@@ -1121,25 +1529,155 @@ function renderCalendar(){
   const offset=firstDay===0?6:firstDay-1;
   for(let i=0;i<offset;i++){const e=document.createElement('div');e.className='cal-day empty';grid.appendChild(e);}
   const daysInMo=new Date(yr,mo+1,0).getDate();
+  const maxXP=habits.reduce((a,h)=>a+h.xp,0)||1;
   for(let d=1;d<=daysInMo;d++){
     const dt=new Date(yr,mo,d);
     const isFuture=dt>today;
     const isToday=dt.toDateString()===today.toDateString();
     const el=document.createElement('div');
     let cls='cal-day';
-    if(isFuture)cls+=' future-cal';
-    else if(isToday)cls+=' today-cal';
-    else if(dayComplete(dt))cls+=' done-cal';
-    else{
+    if(isFuture){cls+=' future-cal';}
+    else if(isToday){
+      // compute today's progress for border color
       const dd=loadDay(dt);
-      const core=habits.filter(x=>!x.optional);
-      const done=core.filter(x=>dd.checked&&dd.checked[x.id]).length;
-      if(done>0)cls+=' partial-cal';
+      let xp=0;habits.forEach(h=>{if(dd.checked&&dd.checked[h.id])xp+=h.xp;});
+      const pct=xp/maxXP;
+      if(pct>=1)cls+=' done-cal';
+      else if(pct>=0.5)cls+=' hi-cal';
+      else if(pct>0)cls+=' lo-cal';
+      else cls+=' none-cal';
+      // add today border on top
+      el.style.outline='2px solid var(--accent2)';
+      el.style.outlineOffset='-2px';
+    } else {
+      const dd=loadDay(dt);
+      let xp=0;habits.forEach(h=>{if(dd.checked&&dd.checked[h.id])xp+=h.xp;});
+      const pct=xp/maxXP;
+      if(pct>=1)cls+=' done-cal';
+      else if(pct>=0.5)cls+=' hi-cal';
+      else if(pct>0)cls+=' lo-cal';
+      else cls+=' none-cal';
     }
     el.className=cls;el.textContent=d;
     grid.appendChild(el);
   }
 }
+
+// ── MONTH COMPARE CHART ──────────────────────
+function renderCompareChart(){
+  const canvas=document.getElementById('compareCanvas');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.offsetWidth||320,H=120;
+  canvas.width=W;canvas.height=H;
+  ctx.clearRect(0,0,W,H);
+
+  const monthNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const data=[];
+  for(let m=3;m>=0;m--){
+    const ref=new Date(today.getFullYear(),today.getMonth()-m,1);
+    const yr=ref.getFullYear(),mo=ref.getMonth();
+    const daysInMo=new Date(yr,mo+1,0).getDate();
+    let totalPossible=0,totalEarned=0;
+    for(let d=1;d<=daysInMo;d++){
+      const dt=new Date(yr,mo,d);
+      if(dt>today)break;
+      const isWE=dt.getDay()===0||dt.getDay()===6;
+      if(isWE&&!meta.weekendOn)continue;
+      const dd=loadDay(dt);
+      habits.forEach(h=>{totalPossible+=h.xp;if(dd.checked&&dd.checked[h.id])totalEarned+=h.xp;});
+    }
+    const pct=totalPossible>0?Math.round(totalEarned/totalPossible*100):0;
+    data.push({label:monthNames[mo],pct,isCurrentMonth:m===0});
+  }
+
+  const pad=20,barW=40,gap=(W-pad*2-barW*4)/3;
+  const chartH=H-32;
+
+  // grid lines
+  [25,50,75,100].forEach(v=>{
+    const y=pad+chartH-(v/100*chartH);
+    ctx.strokeStyle='rgba(255,255,255,0.04)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(W-pad,y);ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,0.2)';
+    ctx.font='8px "DM Mono",monospace';ctx.textAlign='right';
+    ctx.fillText(v+'%',pad-4,y+3);
+  });
+
+  data.forEach((m,i)=>{
+    const x=pad+i*(barW+gap);
+    const bH=Math.max(4,Math.round(m.pct/100*chartH));
+    const y=pad+chartH-bH;
+    const isNow=m.isCurrentMonth;
+    const grad=ctx.createLinearGradient(0,y,0,y+bH);
+    if(isNow){grad.addColorStop(0,'#c8f04d');grad.addColorStop(1,'rgba(200,240,77,0.3)');}
+    else{grad.addColorStop(0,'rgba(77,240,200,0.6)');grad.addColorStop(1,'rgba(77,240,200,0.15)');}
+    ctx.fillStyle=grad;
+    ctx.beginPath();ctx.roundRect(x,y,barW,bH,5);ctx.fill();
+    if(isNow){ctx.strokeStyle='rgba(200,240,77,0.4)';ctx.lineWidth=1;ctx.stroke();}
+    // pct label
+    ctx.fillStyle=isNow?'#c8f04d':'rgba(255,255,255,0.5)';
+    ctx.font=`${isNow?'bold ':' '}10px "DM Mono",monospace`;
+    ctx.textAlign='center';
+    ctx.fillText(m.pct+'%',x+barW/2,y-5);
+    // month label
+    ctx.fillStyle=isNow?'rgba(200,240,77,0.9)':'rgba(255,255,255,0.3)';
+    ctx.font=`${isNow?'bold ':' '}9px "DM Mono",monospace`;
+    ctx.fillText(m.label,x+barW/2,H-4);
+  });
+}
+
+// ── AI INSIGHT ──────────────────────────────
+function renderAiInsight(){
+  const aiBody=document.getElementById('aiBody');
+  if(!aiBody)return;
+
+  // Compute data points
+  const streak=calcStreak();
+  const {e:we,p:wp}=weekXP();
+  const weekRate=wp>0?Math.round(we/wp*100):0;
+  const perfMap={};
+  habits.forEach(h=>{perfMap[h.id]={name:h.name,rate:habitRate30(h.id)};});
+  const sorted=Object.values(perfMap).sort((a,b)=>a.rate-b.rate);
+  const weakest=sorted[0];
+  const strongest=sorted[sorted.length-1];
+  const perfect=perfectDaysThisMonth();
+  const daysInMo=today.getDate();
+  const perfectRate=daysInMo>0?Math.round(perfect/daysInMo*100):0;
+
+  // Generate insight logic
+  let mainInsight='',tip='',tipIcon='💡';
+
+  if(streak===0){
+    mainInsight=`You haven't started a streak yet — today is the perfect day to begin. Even one checked habit is one more than zero. The hardest part is starting.`;
+    tip=`Pick your easiest habit and do it first. For you, that's likely <strong>Skincare</strong> or <strong>Track Expenses</strong> — both take under 5 minutes.`;
+    tipIcon='🚀';
+  } else if(streak<7){
+    mainInsight=`You're on a <strong>${streak}-day streak</strong> — solid start. The data shows your week rate is <strong>${weekRate}%</strong>. The 7-day milestone is the first real test of consistency.`;
+    tip=`Your weakest habit is <strong>${weakest.name}</strong> at ${weakest.rate}% over 30 days. Schedule a fixed time for it — don't leave it as a "when I feel like it" task.`;
+    tipIcon='⚡';
+  } else if(streak<14){
+    mainInsight=`A <strong>${streak}-day streak</strong> is real momentum. You've proven you can be consistent. Now the goal is to build systems so good days don't depend on willpower.`;
+    tip=`<strong>${weakest.name}</strong> is your drag at ${weakest.rate}%. For CFA Study specifically: block 60 min in your calendar as a non-negotiable meeting with yourself.`;
+    tipIcon='📈';
+  } else if(streak<30){
+    mainInsight=`<strong>${streak} days</strong> — you're in the top tier of consistent performers. Your strongest habit is <strong>${strongest.name}</strong> at ${strongest.rate}%. This is where identity starts to form.`;
+    tip=`With ${perfectRate}% perfect days this month, push that to 75%+. The gap is usually in <strong>${weakest.name}</strong>. Tie it to an existing habit as a trigger.`;
+    tipIcon='🏆';
+  } else {
+    mainInsight=`<strong>${streak}-day streak</strong> — elite level. At this point habits are automatic. Your focus now should be on quality, not just completion. Are you going deeper in CFA study, not just logging time?`;
+    tip=`Your ${perfectRate}% perfect-day rate is strong. Consider adding weight or depth to <strong>${strongest.name}</strong> — progressive overload applies to study and fitness equally.`;
+    tipIcon='💎';
+  }
+
+  if(weekRate<50&&streak>0){
+    mainInsight+=` This week's rate of <strong>${weekRate}%</strong> is below where you want to be — the streak is alive but the week is underperforming.`;
+  }
+
+  aiBody.innerHTML=`<p>${mainInsight}</p><div class="ai-tip"><span class="ai-tip-icon">${tipIcon}</span><span class="ai-tip-text">${tip}</span></div>`;
+}
+
+function renderCalendarOld(){} // kept for reference
 
 // ══════════════════════════════════════════
 // RENDER — EDIT
@@ -1229,11 +1767,11 @@ function toggleWeekend(){
   renderWeekDots();
 }
 
-function goPage(id){
+function goPage(id,el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.bnav-tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
-  event.currentTarget.classList.add('active');
+  (el||document.getElementById('bnav-'+id)).classList.add('active');
   if(id==='dash')renderDash();
   if(id==='edit')renderEdit();
   if(id==='track')renderTrack();
@@ -1293,6 +1831,65 @@ function spawnConfetti(){
   }
 }
 function clearConfetti(){document.getElementById('confettiWrap').innerHTML='';}
+
+// ══════════════════════════════════════════
+// REBOOT STREAK
+// ══════════════════════════════════════════
+function rebootKey(date){ return `ho_rb_${date.toISOString().slice(0,10)}`; }
+function loadRebootDay(date){ return localStorage.getItem(rebootKey(date))==='1'; }
+function saveRebootDay(date,val){ localStorage.setItem(rebootKey(date),val?'1':'0'); }
+
+function calcRebootStreak(){
+  let s=0,d=new Date(today);
+  d.setDate(d.getDate()-1);
+  while(true){
+    if(loadRebootDay(d)){s++;d.setDate(d.getDate()-1);}
+    else break;
+    if(s>999)break;
+  }
+  if(loadRebootDay(today))s++;
+  return s;
+}
+
+function toggleReboot(){
+  const cur=loadRebootDay(today);
+  saveRebootDay(today,!cur);
+  renderRebootCard();
+}
+
+function renderRebootCard(){
+  const done=loadRebootDay(today);
+  const streak=calcRebootStreak();
+  const card=document.getElementById('rebootCard');
+  if(!card)return;
+  card.classList.toggle('done',done);
+  document.getElementById('rebootCount').textContent=streak;
+}
+
+function renderRebootDash(){
+  const streak=calcRebootStreak();
+  const numEl=document.getElementById('rebootDashNum');
+  if(!numEl)return;
+  numEl.textContent=streak;
+  // 30-day dot grid
+  const dotsEl=document.getElementById('rebootDots');
+  dotsEl.innerHTML='';
+  for(let i=29;i>=0;i--){
+    const d=new Date(today);d.setDate(today.getDate()-i);
+    const on=loadRebootDay(d);
+    const isToday=i===0;
+    const dot=document.createElement('div');
+    dot.className='reboot-dot '+(on?'on':'off')+(isToday?' today-dot':'');
+    dot.title=d.toDateString()+': '+(on?'✓ Maintained':'✗ Not logged');
+    dotsEl.appendChild(dot);
+  }
+  // footer
+  const footer=document.getElementById('rebootDashFooter');
+  if(streak===0)footer.textContent='Tap the card on Track to log today.';
+  else if(streak<7)footer.textContent=`${streak} day${streak>1?'s':''} strong — keep the chain intact.`;
+  else if(streak<30)footer.textContent=`${streak} days — serious discipline. Don't look back.`;
+  else footer.textContent=`${streak} days — elite level self-mastery. 🏆`;
+}
 
 // ══════════════════════════════════════════
 // INIT
