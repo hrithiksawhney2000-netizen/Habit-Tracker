@@ -633,6 +633,45 @@ body::before{
 .reboot-dot.today-dot{outline:2px solid var(--accent3);outline-offset:1px;}
 .reboot-dash-footer{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:10px;}
 
+/* ── DATE NAVIGATOR ── */
+.date-nav{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 0 4px;margin-bottom:4px;
+}
+.date-nav-btn{
+  width:38px;height:38px;border-radius:10px;
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--text2);font-size:18px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all 0.2s;
+  -webkit-tap-highlight-color:transparent;flex-shrink:0;
+}
+.date-nav-btn:active{border-color:var(--accent);color:var(--accent);transform:scale(0.95);}
+.date-nav-btn:disabled{opacity:0.25;pointer-events:none;}
+.date-nav-center{
+  flex:1;text-align:center;cursor:pointer;padding:4px 12px;
+  border-radius:10px;transition:background 0.15s;
+}
+.date-nav-center:active{background:var(--surface2);}
+.date-nav-day{font-size:17px;font-weight:800;letter-spacing:-0.3px;}
+.date-nav-date{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:1px;letter-spacing:0.5px;}
+
+/* ── PAST BANNER ── */
+.past-banner{
+  display:flex;align-items:center;gap:8px;
+  background:rgba(245,200,66,0.07);border:1px solid rgba(245,200,66,0.2);
+  border-radius:12px;padding:10px 14px;margin-bottom:10px;flex-wrap:wrap;
+}
+.past-banner-icon{font-size:14px;flex-shrink:0;}
+.past-banner-text{font-family:'DM Mono',monospace;font-size:11px;color:var(--gold);flex:1;}
+.past-banner-jump{
+  background:none;border:1px solid rgba(245,200,66,0.3);border-radius:7px;
+  color:var(--gold);font-family:'DM Mono',monospace;font-size:10px;
+  padding:4px 10px;cursor:pointer;transition:all 0.2s;white-space:nowrap;
+  -webkit-tap-highlight-color:transparent;
+}
+.past-banner-jump:active{background:rgba(245,200,66,0.1);}
+
 /* ── STREAK TOAST ── */
 .streak-toast{
   position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
@@ -685,15 +724,32 @@ body::before{
 <!-- ══ PAGE: TRACK ══ -->
 <div class="page active" id="page-track">
 
-  <div class="sec-label">Today</div>
+  <!-- DATE NAVIGATOR -->
+  <div class="date-nav">
+    <button class="date-nav-btn" onclick="shiftDay(-1)">‹</button>
+    <div class="date-nav-center" onclick="jumpToToday()">
+      <div class="date-nav-day" id="navDayLabel"></div>
+      <div class="date-nav-date" id="navDateLabel"></div>
+    </div>
+    <button class="date-nav-btn" id="navNextBtn" onclick="shiftDay(1)">›</button>
+  </div>
 
-  <!-- QUOTE CARD -->
+  <!-- QUOTE CARD (today only) -->
+  <div id="quoteSection">
   <div class="quote-card">
     <div class="quote-text" id="quoteText">Loading quote...</div>
     <div class="quote-footer">
       <div class="quote-author" id="quoteAuthor"></div>
       <button class="quote-btn" onclick="nextQuote()">↻ New quote</button>
     </div>
+  </div>
+  </div>
+
+  <!-- PAST DAY BANNER (shown when viewing past) -->
+  <div class="past-banner" id="pastBanner" style="display:none">
+    <span class="past-banner-icon">📅</span>
+    <span class="past-banner-text">Editing past day — changes save automatically</span>
+    <button class="past-banner-jump" onclick="jumpToToday()">Go to Today</button>
   </div>
 
   <!-- MINI PROGRESS GRAPH (7-day) -->
@@ -730,7 +786,7 @@ body::before{
       <div class="today-xp-bar-wrap">
         <div class="xp-bar-label">
           <span id="xpEarned">0 XP</span>
-          <span id="xpPossible">/ 0 XP today</span>
+          <span id="xpPossible">/ 0 XP</span>
         </div>
         <div class="xp-bar-track"><div class="xp-bar-fill" id="xpBarFill" style="width:0%"></div></div>
       </div>
@@ -941,7 +997,7 @@ body::before{
       </div>
     </div>
     <div class="ai-body" id="aiBody">Analysing your patterns...</div>
-    <button class="ai-refresh" onclick="renderAiInsight()">↻ Refresh insight</button>
+    <button class="ai-refresh" onclick="renderAiInsight(true)">↻ Refresh insight</button>
   </div>
 
 </div>
@@ -998,18 +1054,43 @@ const QUOTES = [
   {text:"What gets measured gets managed — and what gets managed gets done.",author:"— Peter Drucker"},
   {text:"The secret of getting ahead is getting started.",author:"— Mark Twain"},
   {text:"Motivation gets you started. Habit keeps you going.",author:"— Jim Ryun"},
+  {text:"A CFA charterholder is built in the study sessions no one sees.",author:"— CFA Community"},
+  {text:"Wealth is built in the spreadsheet, not the trading floor.",author:"— Anonymous"},
+  {text:"Every page you read today is compounding knowledge for tomorrow.",author:"— Anonymous"},
+  {text:"The gym is the boardroom of your body — show up like it matters.",author:"— Anonymous"},
 ];
-let quoteIdx = parseInt(localStorage.getItem('ho_qidx')||'0') % QUOTES.length;
+const TWELVE_HOURS = 12 * 60 * 60 * 1000;
+
+function getAutoQuoteIdx(){
+  const now = Date.now();
+  const stored = localStorage.getItem('ho_q_time');
+  const storedIdx = parseInt(localStorage.getItem('ho_qidx')||'0');
+  if(!stored || (now - parseInt(stored)) >= TWELVE_HOURS){
+    // 12 hours passed — advance to next quote
+    const nextIdx = (storedIdx + 1) % QUOTES.length;
+    localStorage.setItem('ho_qidx', nextIdx);
+    localStorage.setItem('ho_q_time', now);
+    return nextIdx;
+  }
+  return storedIdx % QUOTES.length;
+}
+
+let quoteIdx = getAutoQuoteIdx();
+
 function nextQuote(){
-  quoteIdx=(quoteIdx+1)%QUOTES.length;
-  localStorage.setItem('ho_qidx',quoteIdx);
+  quoteIdx = (quoteIdx + 1) % QUOTES.length;
+  localStorage.setItem('ho_qidx', quoteIdx);
+  localStorage.setItem('ho_q_time', Date.now()); // reset 12h timer from manual tap
   showQuote();
 }
 function showQuote(){
-  const q=QUOTES[quoteIdx];
-  document.getElementById('quoteText').textContent=q.text;
-  document.getElementById('quoteAuthor').textContent=q.author;
+  quoteIdx = getAutoQuoteIdx(); // always check if 12h has passed
+  const q = QUOTES[quoteIdx];
+  document.getElementById('quoteText').textContent = q.text;
+  document.getElementById('quoteAuthor').textContent = q.author;
 }
+// Auto-check every 30 minutes while app is open
+setInterval(()=>{ if(document.getElementById('quoteSection').style.display!=='none') showQuote(); }, 30*60*1000);
 
 let calViewOffset=0; // months back from today
 
@@ -1053,14 +1134,16 @@ function saveMeta(m){ localStorage.setItem('ho_meta',JSON.stringify(m)); }
 let habits = loadHabits();
 let meta   = loadMeta();
 let today  = new Date();
+let viewDate = new Date(today); // the date currently being viewed/edited
 let todayData = loadDay(today);
+let viewData  = todayData;     // data for the viewDate
 
 // ══════════════════════════════════════════
 // CALCULATIONS
 // ══════════════════════════════════════════
 function todayXP(){
   let e=0,p=0;
-  habits.forEach(h=>{p+=h.xp; if(todayData.checked[h.id])e+=h.xp;});
+  habits.forEach(h=>{p+=h.xp; if(viewData.checked&&viewData.checked[h.id])e+=h.xp;});
   return {e,p};
 }
 function dayComplete(date){
@@ -1191,17 +1274,30 @@ function greeting(pct){
 // RENDER — TRACK
 // ══════════════════════════════════════════
 function renderTrack(){
-  // quote
-  showQuote();
+  const isToday = viewDate.toDateString()===today.toDateString();
+  const dayNames=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-  // mini 7-day graph
+  // date navigator
+  document.getElementById('navDayLabel').textContent = isToday ? 'Today' : dayNames[viewDate.getDay()];
+  document.getElementById('navDateLabel').textContent = `${viewDate.getDate()} ${months[viewDate.getMonth()]} ${viewDate.getFullYear()}`;
+  const nextBtn = document.getElementById('navNextBtn');
+  nextBtn.disabled = isToday;
+
+  // quote (only show for today)
+  document.getElementById('quoteSection').style.display = isToday ? 'block' : 'none';
+  if(isToday) showQuote();
+
+  // past banner
+  document.getElementById('pastBanner').style.display = isToday ? 'none' : 'flex';
+
+  // mini 7-day graph (always based on real today)
   renderMiniGraph();
 
-  // date
-  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  // date display inside checklist header
+  const shortDays=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   document.getElementById('dateDisplay').textContent=
-    `${days[today.getDay()]} ${today.getDate()} ${months[today.getMonth()]}`;
+    `${shortDays[viewDate.getDay()]} ${viewDate.getDate()} ${months[viewDate.getMonth()]}`;
 
   // ring
   const {e,p}=todayXP();
@@ -1210,12 +1306,12 @@ function renderTrack(){
   document.getElementById('ringFill').style.strokeDashoffset=circ-(circ*pct);
   document.getElementById('ringPct').textContent=Math.round(pct*100)+'%';
   const core=habits.filter(x=>!x.optional);
-  const doneCt=core.filter(x=>todayData.checked[x.id]).length;
+  const doneCt=core.filter(x=>viewData.checked&&viewData.checked[x.id]).length;
   document.getElementById('ringDone').textContent=`${doneCt}/${core.length}`;
 
   // xp bar
   document.getElementById('xpEarned').textContent=e+' XP';
-  document.getElementById('xpPossible').textContent='/ '+p+' XP today';
+  document.getElementById('xpPossible').textContent='/ '+p+' XP';
   document.getElementById('xpBarFill').style.width=Math.round(pct*100)+'%';
 
   // level badge
@@ -1227,13 +1323,14 @@ function renderTrack(){
   const h=today.getHours();
   const timePart=h<12?'Good morning':h<17?'Good afternoon':'Good evening';
   let greet;
-  if(pct===0)greet=`${timePart}. Start strong.`;
+  if(!isToday) greet=`Editing ${dayNames[viewDate.getDay()]} — tap habits to update`;
+  else if(pct===0)greet=`${timePart}. Start strong.`;
   else if(pct<0.5)greet=`Keep going — you're building.`;
   else if(pct<1)greet=`Almost there. Finish strong.`;
   else greet=`Day locked in. 🏆`;
   document.getElementById('todayGreeting').textContent=greet;
 
-  // streak
+  // streak (always from today)
   const s=calcStreak();
   document.getElementById('streakNum').textContent=s;
 
@@ -1243,8 +1340,8 @@ function renderTrack(){
   // week dots
   renderWeekDots();
 
-  // celebration
-  checkCelebration();
+  // celebration (only for today's view)
+  if(isToday) checkCelebration();
   renderRebootCard();
 }
 
@@ -1257,7 +1354,7 @@ function renderHabitList(){
 }
 
 function habitRowHTML(h){
-  const done=!!todayData.checked[h.id];
+  const done=!!(viewData.checked&&viewData.checked[h.id]);
   return `<div class="habit-row${done?' done':''}${h.optional?' optional':''}" onclick="toggleHabit('${h.id}')">
     <div class="hcheck"><span class="hcheck-icon">✓</span></div>
     <div class="hinfo">
@@ -1378,7 +1475,7 @@ function renderDash(){
   calViewOffset=0;
   renderCalendar();
   setTimeout(renderCompareChart,50);
-  renderAiInsight();
+  renderAiInsight(false);
   renderRebootDash();
 }
 
@@ -1568,19 +1665,20 @@ function renderCompareChart(){
   const canvas=document.getElementById('compareCanvas');
   if(!canvas)return;
   const ctx=canvas.getContext('2d');
-  const W=canvas.offsetWidth||320,H=120;
+  const W=canvas.offsetWidth||320,H=130;
   canvas.width=W;canvas.height=H;
   ctx.clearRect(0,0,W,H);
 
   const monthNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  // Start from April 2026 (app launch date) — grows forward automatically each month
+  const START_YEAR=2026, START_MONTH=3; // month index 3 = April
   const data=[];
-  for(let m=3;m>=0;m--){
-    const ref=new Date(today.getFullYear(),today.getMonth()-m,1);
-    const yr=ref.getFullYear(),mo=ref.getMonth();
-    const daysInMo=new Date(yr,mo+1,0).getDate();
+  let y=START_YEAR, m=START_MONTH;
+  while(y<today.getFullYear()||(y===today.getFullYear()&&m<=today.getMonth())){
+    const daysInMo=new Date(y,m+1,0).getDate();
     let totalPossible=0,totalEarned=0;
     for(let d=1;d<=daysInMo;d++){
-      const dt=new Date(yr,mo,d);
+      const dt=new Date(y,m,d);
       if(dt>today)break;
       const isWE=dt.getDay()===0||dt.getDay()===6;
       if(isWE&&!meta.weekendOn)continue;
@@ -1588,91 +1686,187 @@ function renderCompareChart(){
       habits.forEach(h=>{totalPossible+=h.xp;if(dd.checked&&dd.checked[h.id])totalEarned+=h.xp;});
     }
     const pct=totalPossible>0?Math.round(totalEarned/totalPossible*100):0;
-    data.push({label:monthNames[mo],pct,isCurrentMonth:m===0});
+    const isCurrent=y===today.getFullYear()&&m===today.getMonth();
+    data.push({label:monthNames[m],pct,isCurrent});
+    m++;if(m>11){m=0;y++;}
   }
 
-  const pad=20,barW=40,gap=(W-pad*2-barW*4)/3;
-  const chartH=H-32;
+  const n=data.length;
+  if(n===0)return;
+  const pad=24, rightPad=8;
+  const chartW=W-pad-rightPad;
+  const chartH=H-28;
+  const barW=Math.max(14,Math.min(36,Math.floor((chartW/n)*0.62)));
+  const slotW=chartW/n;
 
   // grid lines
   [25,50,75,100].forEach(v=>{
-    const y=pad+chartH-(v/100*chartH);
+    const gy=pad+chartH-(v/100*chartH);
     ctx.strokeStyle='rgba(255,255,255,0.04)';ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(W-pad,y);ctx.stroke();
-    ctx.fillStyle='rgba(255,255,255,0.2)';
-    ctx.font='8px "DM Mono",monospace';ctx.textAlign='right';
-    ctx.fillText(v+'%',pad-4,y+3);
+    ctx.beginPath();ctx.moveTo(pad,gy);ctx.lineTo(W-rightPad,gy);ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,0.18)';
+    ctx.font='7px "DM Mono",monospace';ctx.textAlign='right';
+    ctx.fillText(v+'%',pad-3,gy+3);
   });
 
   data.forEach((m,i)=>{
-    const x=pad+i*(barW+gap);
-    const bH=Math.max(4,Math.round(m.pct/100*chartH));
+    const x=pad+i*slotW+(slotW-barW)/2;
+    const bH=Math.max(3,Math.round(m.pct/100*chartH));
     const y=pad+chartH-bH;
-    const isNow=m.isCurrentMonth;
     const grad=ctx.createLinearGradient(0,y,0,y+bH);
-    if(isNow){grad.addColorStop(0,'#c8f04d');grad.addColorStop(1,'rgba(200,240,77,0.3)');}
-    else{grad.addColorStop(0,'rgba(77,240,200,0.6)');grad.addColorStop(1,'rgba(77,240,200,0.15)');}
+    if(m.isCurrent){grad.addColorStop(0,'#c8f04d');grad.addColorStop(1,'rgba(200,240,77,0.25)');}
+    else{grad.addColorStop(0,'rgba(77,240,200,0.65)');grad.addColorStop(1,'rgba(77,240,200,0.12)');}
     ctx.fillStyle=grad;
-    ctx.beginPath();ctx.roundRect(x,y,barW,bH,5);ctx.fill();
-    if(isNow){ctx.strokeStyle='rgba(200,240,77,0.4)';ctx.lineWidth=1;ctx.stroke();}
-    // pct label
-    ctx.fillStyle=isNow?'#c8f04d':'rgba(255,255,255,0.5)';
-    ctx.font=`${isNow?'bold ':' '}10px "DM Mono",monospace`;
-    ctx.textAlign='center';
-    ctx.fillText(m.pct+'%',x+barW/2,y-5);
+    ctx.beginPath();ctx.roundRect(x,y,barW,bH,4);ctx.fill();
+    if(m.isCurrent){ctx.strokeStyle='rgba(200,240,77,0.5)';ctx.lineWidth=1;ctx.stroke();}
+    // pct
+    if(m.pct>0){
+      ctx.fillStyle=m.isCurrent?'#c8f04d':'rgba(255,255,255,0.45)';
+      ctx.font=`${m.isCurrent?'bold ':' '}9px "DM Mono",monospace`;
+      ctx.textAlign='center';
+      ctx.fillText(m.pct+'%',x+barW/2,Math.max(y-3,10));
+    }
     // month label
-    ctx.fillStyle=isNow?'rgba(200,240,77,0.9)':'rgba(255,255,255,0.3)';
-    ctx.font=`${isNow?'bold ':' '}9px "DM Mono",monospace`;
+    ctx.fillStyle=m.isCurrent?'rgba(200,240,77,0.9)':'rgba(255,255,255,0.28)';
+    ctx.font=`${m.isCurrent?'bold ':' '}8px "DM Mono",monospace`;
+    ctx.textAlign='center';
     ctx.fillText(m.label,x+barW/2,H-4);
   });
 }
 
 // ── AI INSIGHT ──────────────────────────────
-function renderAiInsight(){
+let aiInsightMode = 0; // cycles through insight categories on button press
+const AI_MODES = ['streak','weakest','week','month','cfa','gym'];
+
+function renderAiInsight(cycleNext){
   const aiBody=document.getElementById('aiBody');
   if(!aiBody)return;
 
-  // Compute data points
+  if(cycleNext) aiInsightMode=(aiInsightMode+1)%AI_MODES.length;
+
+  // ── Live data ──
   const streak=calcStreak();
   const {e:we,p:wp}=weekXP();
   const weekRate=wp>0?Math.round(we/wp*100):0;
+  const {e:me,p:mp}=monthXP();
+  const monthRate=mp>0?Math.round(me/mp*100):0;
   const perfMap={};
   habits.forEach(h=>{perfMap[h.id]={name:h.name,rate:habitRate30(h.id)};});
   const sorted=Object.values(perfMap).sort((a,b)=>a.rate-b.rate);
   const weakest=sorted[0];
   const strongest=sorted[sorted.length-1];
+  const second_weakest=sorted.length>1?sorted[1]:null;
   const perfect=perfectDaysThisMonth();
-  const daysInMo=today.getDate();
-  const perfectRate=daysInMo>0?Math.round(perfect/daysInMo*100):0;
+  const daysElapsed=today.getDate();
+  const perfectRate=daysElapsed>0?Math.round(perfect/daysElapsed*100):0;
+  const todayChecked=Object.values(viewData.checked||{}).filter(Boolean).length;
+  const totalHabits=habits.length;
+  const cfaHabit=perfMap['cfa']||Object.values(perfMap).find(h=>h.name.toLowerCase().includes('cfa'));
+  const gymHabit=perfMap['gym']||Object.values(perfMap).find(h=>h.name.toLowerCase().includes('gym'));
 
-  // Generate insight logic
-  let mainInsight='',tip='',tipIcon='💡';
+  // ── Mode-specific insights ──
+  const mode=AI_MODES[aiInsightMode];
+  let mainInsight='', tip='', tipIcon='💡', modeLabel='';
 
-  if(streak===0){
-    mainInsight=`You haven't started a streak yet — today is the perfect day to begin. Even one checked habit is one more than zero. The hardest part is starting.`;
-    tip=`Pick your easiest habit and do it first. For you, that's likely <strong>Skincare</strong> or <strong>Track Expenses</strong> — both take under 5 minutes.`;
-    tipIcon='🚀';
-  } else if(streak<7){
-    mainInsight=`You're on a <strong>${streak}-day streak</strong> — solid start. The data shows your week rate is <strong>${weekRate}%</strong>. The 7-day milestone is the first real test of consistency.`;
-    tip=`Your weakest habit is <strong>${weakest.name}</strong> at ${weakest.rate}% over 30 days. Schedule a fixed time for it — don't leave it as a "when I feel like it" task.`;
-    tipIcon='⚡';
-  } else if(streak<14){
-    mainInsight=`A <strong>${streak}-day streak</strong> is real momentum. You've proven you can be consistent. Now the goal is to build systems so good days don't depend on willpower.`;
-    tip=`<strong>${weakest.name}</strong> is your drag at ${weakest.rate}%. For CFA Study specifically: block 60 min in your calendar as a non-negotiable meeting with yourself.`;
-    tipIcon='📈';
-  } else if(streak<30){
-    mainInsight=`<strong>${streak} days</strong> — you're in the top tier of consistent performers. Your strongest habit is <strong>${strongest.name}</strong> at ${strongest.rate}%. This is where identity starts to form.`;
-    tip=`With ${perfectRate}% perfect days this month, push that to 75%+. The gap is usually in <strong>${weakest.name}</strong>. Tie it to an existing habit as a trigger.`;
-    tipIcon='🏆';
-  } else {
-    mainInsight=`<strong>${streak}-day streak</strong> — elite level. At this point habits are automatic. Your focus now should be on quality, not just completion. Are you going deeper in CFA study, not just logging time?`;
-    tip=`Your ${perfectRate}% perfect-day rate is strong. Consider adding weight or depth to <strong>${strongest.name}</strong> — progressive overload applies to study and fitness equally.`;
-    tipIcon='💎';
+  if(mode==='streak'){
+    modeLabel='Streak Analysis';
+    if(streak===0){
+      mainInsight=`No active streak yet. You've checked <strong>${todayChecked}/${totalHabits}</strong> habits today — that's the foundation. A streak starts the moment you decide to protect it.`;
+      tip=`Start with the two easiest habits back-to-back. Momentum is a system, not a feeling.`;
+      tipIcon='🚀';
+    } else if(streak<7){
+      mainInsight=`<strong>${streak}-day streak</strong> active. The first 7 days are the hardest — your brain is still negotiating. You've checked <strong>${todayChecked}/${totalHabits}</strong> today. Don't negotiate.`;
+      tip=`The 7-day wall is real. Put tomorrow's habit time in your phone calendar right now.`;
+      tipIcon='🔥';
+    } else if(streak<21){
+      mainInsight=`<strong>${streak} days</strong> — you're past the negotiation phase. Research suggests 21 days to solidify a habit loop. You're ${21-streak} days from that marker.`;
+      tip=`Your streak is strong enough to survive one bad day IF you recover the next morning. Don't let one miss become two.`;
+      tipIcon='⚡';
+    } else {
+      mainInsight=`<strong>${streak}-day streak</strong> — this is identity-level behaviour now. You don't "do habits", you are someone who does. ${perfectRate}% of days this month were perfect.`;
+      tip=`The real test: can you maintain this during a travel week or a high-pressure deadline at work? Plan for it before it happens.`;
+      tipIcon='💎';
+    }
   }
 
-  if(weekRate<50&&streak>0){
-    mainInsight+=` This week's rate of <strong>${weekRate}%</strong> is below where you want to be — the streak is alive but the week is underperforming.`;
+  else if(mode==='weakest'){
+    modeLabel='Weakest Link';
+    mainInsight=`Your lowest-consistency habit over 30 days is <strong>${weakest.name}</strong> at <strong>${weakest.rate}%</strong>. ${second_weakest?`Second weakest: <strong>${second_weakest.name}</strong> at ${second_weakest.rate}%.`:''} Your strongest is <strong>${strongest.name}</strong> at ${strongest.rate}%.`;
+    if(weakest.rate<30){
+      tip=`${weakest.rate}% means you're skipping <strong>${weakest.name}</strong> 7 out of 10 days. This is a scheduling problem, not a motivation problem. Give it a fixed slot.`;
+      tipIcon='⚠️';
+    } else if(weakest.rate<60){
+      tip=`${weakest.name} at ${weakest.rate}% is borderline. You do it — just not reliably. Attach it to a habit you already nail consistently.`;
+      tipIcon='📌';
+    } else {
+      tip=`Even your weakest habit is above 60% — solid baseline. The gap between ${weakest.rate}% and 90% is usually just intention vs. execution.`;
+      tipIcon='📈';
+    }
   }
+
+  else if(mode==='week'){
+    modeLabel='This Week';
+    mainInsight=`This week you've earned <strong>${we} XP</strong> out of a possible <strong>${wp} XP</strong> — a <strong>${weekRate}%</strong> completion rate. Today you've checked off <strong>${todayChecked}/${totalHabits}</strong> habits so far.`;
+    if(weekRate>=80){
+      tip=`Top-tier week. You're building the kind of consistency that compounds over months. Protect the remaining days.`;
+      tipIcon='🏆';
+    } else if(weekRate>=50){
+      tip=`Decent week but the ceiling is higher. Identify the days where habits slipped — was it a time problem or an energy problem? Fix the root cause.`;
+      tipIcon='⚡';
+    } else {
+      tip=`Below 50% this week. Don't wait for Monday to reset — today is the reset. Every habit you do from here improves the week's score.`;
+      tipIcon='🔁';
+    }
+  }
+
+  else if(mode==='month'){
+    modeLabel='Monthly Progress';
+    mainInsight=`This month: <strong>${me} XP</strong> earned of <strong>${mp} XP</strong> possible — <strong>${monthRate}%</strong>. You've had <strong>${perfect} perfect day${perfect!==1?'s':''}</strong> out of ${daysElapsed} days tracked (${perfectRate}%).`;
+    if(monthRate>=75){
+      tip=`You're in the top quartile of consistency this month. The data is reflecting real discipline — keep the standard high through the end of the month.`;
+      tipIcon='🏆';
+    } else if(monthRate>=50){
+      tip=`Halfway there on monthly output. Each remaining day has outsized impact on the final monthly score — there's still time to finish strong.`;
+      tipIcon='📊';
+    } else {
+      tip=`The month isn't lost. Even if the first half was rough, a strong second half demonstrates recovery — which is its own form of discipline.`;
+      tipIcon='📅';
+    }
+  }
+
+  else if(mode==='cfa'){
+    modeLabel='CFA Focus';
+    const cfaRate=cfaHabit?cfaHabit.rate:0;
+    mainInsight=`CFA Study has a <strong>${cfaRate}%</strong> completion rate over 30 days. ${cfaRate>=80?`That's elite-level consistency for L2 prep.`:cfaRate>=60?`Solid, but L2 requires near-daily exposure to let concepts stack.`:`Below where you want to be for CFA L2 — this exam punishes gaps.`} Your overall streak is <strong>${streak} days</strong>.`;
+    if(cfaRate<60){
+      tip=`CFA L2 has 88 LOS across 10 topics. Missing a third of study days means whole topics won't get revision cycles. Block it daily — even 45 min beats zero.`;
+      tipIcon='📚';
+    } else if(cfaRate<80){
+      tip=`Good effort on CFA. To push from ${cfaRate}% to 90%+, add a Sunday review session for the week's weakest topic. Spaced repetition is your edge.`;
+      tipIcon='📖';
+    } else {
+      tip=`CFA study at ${cfaRate}% is strong. Now focus on quality — are you doing active recall and practice questions, or just reading? L2 is application-heavy.`;
+      tipIcon='🎯';
+    }
+  }
+
+  else if(mode==='gym'){
+    modeLabel='Physical Foundation';
+    const gymRate=gymHabit?gymHabit.rate:0;
+    mainInsight=`Gym consistency over 30 days: <strong>${gymRate}%</strong>. ${gymRate>=80?`Your physical routine is locked in — this directly feeds your energy and focus for CFA study.`:gymRate>=50?`Moderate gym consistency. When you train, your cognitive performance on study days improves measurably.`:`Gym attendance is low. The energy and focus payoff for CFA study makes this more important than it looks.`}`;
+    tip=gymRate<60?`Even 3 sessions a week at ${gymRate}% is better than the current rate. Shorter workouts count — 30 min beats zero every time.`:`Gym is fuelling everything else. Protect it even on busy days — even a 20-min session maintains the habit loop.`;
+    tipIcon='💪';
+  }
+
+  // update button label to show next mode
+  const nextMode=AI_MODES[(aiInsightMode+1)%AI_MODES.length];
+  const nextLabel={streak:'Streak',weakest:'Weakest Habit',week:'This Week',month:'Monthly',cfa:'CFA Focus',gym:'Gym'}[nextMode];
+  const btn=document.querySelector('.ai-refresh');
+  if(btn)btn.textContent=`↻ Show: ${nextLabel}`;
+
+  // update sub-label
+  const sub=document.querySelector('.ai-card-sub');
+  if(sub)sub.textContent=modeLabel+' · updates live';
 
   aiBody.innerHTML=`<p>${mainInsight}</p><div class="ai-tip"><span class="ai-tip-icon">${tipIcon}</span><span class="ai-tip-text">${tip}</span></div>`;
 }
@@ -1756,8 +1950,27 @@ function saveAll(){
 // INTERACTIONS
 // ══════════════════════════════════════════
 function toggleHabit(id){
-  todayData.checked[id]=!todayData.checked[id];
-  saveDay(today,todayData);
+  if(!viewData.checked) viewData.checked={};
+  viewData.checked[id]=!viewData.checked[id];
+  saveDay(viewDate,viewData);
+  // keep todayData in sync if editing today
+  if(viewDate.toDateString()===today.toDateString()) todayData=viewData;
+  renderTrack();
+}
+
+function shiftDay(dir){
+  const next=new Date(viewDate);
+  next.setDate(viewDate.getDate()+dir);
+  // don't go into the future beyond today
+  if(next>today) return;
+  viewDate=next;
+  viewData=loadDay(viewDate);
+  renderTrack();
+}
+
+function jumpToToday(){
+  viewDate=new Date(today);
+  viewData=todayData;
   renderTrack();
 }
 
@@ -1794,12 +2007,14 @@ function showStreakToast(){
 // ══════════════════════════════════════════
 function checkCelebration(){
   const core=habits.filter(x=>!x.optional);
-  const allDone=core.length>0&&core.every(x=>todayData.checked[x.id]);
-  const todayStr=today.toISOString().slice(0,10);
-  if(allDone&&meta.celebShown!==todayStr){
-    meta.celebShown=todayStr;
-    saveMeta(meta);
-    showCelebration('🏆','Day Complete!',`All ${core.length} core habits done — full XP earned`);
+  const allDone=core.length>0&&core.every(x=>viewData.checked&&viewData.checked[x.id]);
+  const viewStr=viewDate.toISOString().slice(0,10);
+  const celebKey='ho_celeb_'+viewStr;
+  if(allDone&&!localStorage.getItem(celebKey)){
+    localStorage.setItem(celebKey,'1');
+    const isToday=viewDate.toDateString()===today.toDateString();
+    const label=isToday?'Today':'That Day';
+    showCelebration('🏆',`${label} Complete!`,`All ${core.length} core habits done — full XP earned`);
   }
 }
 
@@ -1852,13 +2067,13 @@ function calcRebootStreak(){
 }
 
 function toggleReboot(){
-  const cur=loadRebootDay(today);
-  saveRebootDay(today,!cur);
+  const cur=loadRebootDay(viewDate);
+  saveRebootDay(viewDate,!cur);
   renderRebootCard();
 }
 
 function renderRebootCard(){
-  const done=loadRebootDay(today);
+  const done=loadRebootDay(viewDate);
   const streak=calcRebootStreak();
   const card=document.getElementById('rebootCard');
   if(!card)return;
